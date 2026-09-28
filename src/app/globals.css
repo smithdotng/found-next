@@ -1,26 +1,166 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* Brand palette sampled from the Found logo:
+   navy #1B5E85 (wordmark), coral #CB4850 (top bar), slate grey #8E9193 (bottom bar). */
+@theme {
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-brand-50: #eef6fb;
+  --color-brand-100: #d6e9f4;
+  --color-brand-200: #aed2e8;
+  --color-brand-300: #7bb4d6;
+  --color-brand-400: #4690bd;
+  --color-brand-500: #2574a3;
+  --color-brand-600: #1b5e85;
+  --color-brand-700: #184e6e;
+  --color-brand-800: #16405a;
+  --color-brand-900: #12334a;
+  --color-brand-950: #0b2131;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  --color-coral-50: #fdf2f3;
+  --color-coral-100: #fbe3e5;
+  --color-coral-200: #f6c5c9;
+  --color-coral-400: #e27980;
+  --color-coral-500: #cb4850;
+  --color-coral-600: #b23a42;
+  --color-coral-700: #942f36;
+
+  --color-ink: #0f1c26;
+
+  --shadow-card: 0 1px 2px rgb(15 28 38 / 0.04), 0 4px 16px -4px rgb(15 28 38 / 0.08);
+  --shadow-lift: 0 2px 4px rgb(15 28 38 / 0.04), 0 16px 40px -12px rgb(15 28 38 / 0.22);
+
+  --animate-fade-in: fade-in 0.25s ease-out;
+  --animate-slide-up: slide-up 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-white text-ink antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+  ::selection {
+    @apply bg-brand-100 text-brand-900;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-500;
+  }
+}
+
+@utility container-page {
+  @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition
+    disabled:cursor-not-allowed disabled:opacity-60 whitespace-nowrap;
+}
+
+@utility btn-primary {
+  @apply btn bg-brand-600 text-white shadow-sm hover:bg-brand-700 active:bg-brand-800;
+}
+
+@utility btn-accent {
+  @apply btn bg-coral-500 text-white shadow-sm hover:bg-coral-600;
+}
+
+@utility btn-outline {
+  @apply btn border border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50;
+}
+
+@utility btn-ghost {
+  @apply btn text-slate-600 hover:bg-slate-100 hover:text-slate-900;
+}
+
+@utility btn-danger {
+  @apply btn bg-rose-600 text-white hover:bg-rose-700;
+}
+
+@utility btn-sm {
+  @apply rounded-lg! px-3! py-1.5! text-xs!;
+}
+
+@utility field-label {
+  @apply mb-1.5 block text-sm font-medium text-slate-700;
+}
+
+@utility field {
+  @apply block w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-ink shadow-xs
+    placeholder:text-slate-400 transition focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 focus:outline-none
+    disabled:bg-slate-50;
+  &:is(select) {
+    @apply appearance-none bg-no-repeat pr-9;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.6rem center;
+    background-size: 1.25rem;
+  }
+}
+
+@utility field-hint {
+  @apply mt-1 text-xs text-slate-500;
+}
+
+@utility card {
+  @apply rounded-2xl border border-slate-200/80 bg-white shadow-card;
+}
+
+@utility chip {
+  @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset;
+}
+
+@layer components {
+  .prose-found {
+    @apply text-[15px] leading-7 text-slate-700;
+  }
+  .prose-found h2 {
+    @apply mt-8 mb-3 text-xl font-bold text-ink;
+  }
+  .prose-found h3 {
+    @apply mt-6 mb-2 text-lg font-semibold text-ink;
+  }
+  .prose-found p {
+    @apply mb-4;
+  }
+  .prose-found ul {
+    @apply mb-4 list-disc space-y-1 pl-5;
+  }
+  .prose-found ol {
+    @apply mb-4 list-decimal space-y-1 pl-5;
+  }
+  .prose-found a {
+    @apply font-medium text-brand-600 underline decoration-brand-200 underline-offset-2 hover:decoration-brand-500;
+  }
+  .prose-found img {
+    @apply my-6 rounded-xl;
+  }
+  .prose-found blockquote {
+    @apply my-6 border-l-4 border-brand-200 pl-4 italic text-slate-600;
+  }
+  .prose-found strong {
+    @apply font-semibold text-ink;
+  }
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
 }
