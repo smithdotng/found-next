@@ -1,6 +1,22 @@
 import path from "node:path";
 import type { NextConfig } from "next";
 
+function mediaPatterns() {
+  const patterns: { protocol: "https" | "http"; hostname: string; port?: string; pathname: string }[] = [
+    { protocol: "https", hostname: "*.r2.dev", pathname: "/uploads/**" },
+  ];
+  try {
+    const base = process.env.NEXT_PUBLIC_MEDIA_BASE_URL;
+    if (base) {
+      const u = new URL(base);
+      patterns.push({ protocol: u.protocol === "http:" ? "http" : "https", hostname: u.hostname, port: u.port, pathname: `${u.pathname.replace(/\/$/, "")}/uploads/**` });
+    }
+  } catch {
+    /* ignore a malformed value */
+  }
+  return patterns;
+}
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   // This app sits inside the Express project folder; keep Turbopack rooted here.
@@ -19,6 +35,10 @@ const nextConfig: NextConfig = {
       { pathname: "/assets/**" },
       { pathname: "/images/**" },
     ],
+    // Photos served from Cloudflare R2 (NEXT_PUBLIC_MEDIA_BASE_URL) are optimised by next/image too.
+    remotePatterns: mediaPatterns(),
+    // Only for testing against a local S3 emulator; never set this in production.
+    dangerouslyAllowLocalIP: process.env.IMAGES_ALLOW_LOCAL_IP === "true",
     minimumCacheTTL: 60 * 60 * 24 * 7,
   },
   async headers() {

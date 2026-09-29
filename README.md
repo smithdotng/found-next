@@ -74,6 +74,28 @@ Rules worth knowing:
 New collections: `bookings` (the Express Booking schema, extended) and `blockeddates`. The Express app's User schema
 doesn't know the `host` type, so hosts should use the Next.js app.
 
+## Photo storage (Cloudflare R2)
+
+Photo URLs are stored in MongoDB as `/uploads/<file>` by both apps. With R2 configured:
+
+- **New uploads** from this app go straight to the bucket under the same path (`uploads/<file>`), not to disk.
+- **Pages** load photos from `NEXT_PUBLIC_MEDIA_BASE_URL` (see `src/lib/media.ts`), optimised by `next/image`.
+  OG tags and JSON-LD use the same URLs.
+- **`/uploads/...` requests** are served from local disk if the file exists, otherwise 308-redirected to the bucket,
+  so old links and emails keep working.
+- **The Express app** mirrors every new file in `public/uploads` to the bucket (`utils/r2-sync.js`, started from `app.js`).
+
+Setup:
+1. Cloudflare → R2 → **Create bucket** (e.g. `found-media`). Under **Settings → Public access**, connect a custom domain
+   (`media.found.ng`) or enable the `r2.dev` URL.
+2. R2 → **Manage API tokens** → create a token with **Object Read & Write** on that bucket.
+3. Put `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` and `NEXT_PUBLIC_MEDIA_BASE_URL`
+   in `.env.local` / your host's environment, and the four `S3_*` values in the Express app's `.env`.
+4. Copy existing photos once, from the machine that has the uploads folder (the EC2 server):
+   `node --env-file=.env.local scripts/migrate-uploads.mjs --dry-run`, then without `--dry-run`.
+   It's safe to re-run; files already in the bucket are skipped.
+5. `npm install` in the Express app (adds `@aws-sdk/client-s3`) and restart it; it logs `[r2-sync] Mirroring …`.
+
 ## OG / SEO tags
 
 Every page builds its tags through `src/lib/seo.ts`, which keeps the Express header's set:

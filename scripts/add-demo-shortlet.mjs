@@ -8,7 +8,8 @@
 // Details are modelled on typical 2-bedroom Wuse 2 shortlets (₦100k–₦230k/night). The text and images
 // are original and clearly marked DEMO — it is not a real apartment.
 import { randomBytes } from "node:crypto";
-import { copyFileSync, existsSync, mkdirSync, rmSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
+import { DeleteObjectsCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import mongoose from "mongoose";
@@ -34,6 +35,11 @@ if (!process.env.MONGODB_URI) {
 }
 await mongoose.connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 30000 });
 const demoDir = path.join(uploadRoot(), "demo");
+// When Cloudflare R2 / S3 is configured, demo images go to the bucket too.
+const s3 = process.env.S3_BUCKET && process.env.S3_ENDPOINT && process.env.S3_ACCESS_KEY_ID && process.env.S3_SECRET_ACCESS_KEY
+  ? new S3Client({ region: process.env.S3_REGION || "auto", forcePathStyle: process.env.S3_FORCE_PATH_STYLE === "true", endpoint: process.env.S3_ENDPOINT, credentials: { accessKeyId: process.env.S3_ACCESS_KEY_ID, secretAccessKey: process.env.S3_SECRET_ACCESS_KEY } })
+  : null;
+const demoKeys = [1, 2, 3, 4, 5].map((n) => `uploads/demo/demo-shortlet-${n}.jpg`);
 
 if (args.remove) {
   const props = await Property.find({ slug: SLUG }).select("_id owner");
@@ -41,6 +47,7 @@ if (args.remove) {
   const [b, x, p] = await Promise.all([Booking.deleteMany({ property: { $in: ids } }), BlockedDate.deleteMany({ property: { $in: ids } }), Property.deleteMany({ _id: { $in: ids } })]);
   const hosts = await User.deleteMany({ "hostProfile.businessName": "Found Demo Stays", userType: "host" });
   rmSync(demoDir, { recursive: true, force: true });
+  if (s3) await s3.send(new DeleteObjectsCommand({ Bucket: process.env.S3_BUCKET, Delete: { Objects: demoKeys.map((Key) => ({ Key })) } }));
   console.log(`Removed: ${p.deletedCount} listing, ${b.deletedCount} bookings, ${x.deletedCount} blocks, ${hosts.deletedCount} demo host.`);
   await mongoose.disconnect();
   process.exit(0);
@@ -75,10 +82,13 @@ await host.save();
 
 // 2. Images
 mkdirSync(demoDir, { recursive: true });
-const images = [1, 2, 3, 4, 5].map((n, i) => {
-  copyFileSync(path.join(here, "demo-shortlet", `demo-${n}.jpg`), path.join(demoDir, `demo-shortlet-${n}.jpg`));
-  return { url: `/uploads/demo/demo-shortlet-${n}.jpg`, isPrimary: i === 0 };
-});
+const images = [];
+for (const [i, n] of [1, 2, 3, 4, 5].entries()) {
+  const src = path.join(here, "demo-shortlet", `demo-${n}.jpg`);
+  copyFileSync(src, path.join(demoDir, `demo-shortlet-${n}.jpg`));
+  if (s3) await s3.send(new PutObjectCommand({ Bucket: process.env.S3_BUCKET, Key: demoKeys[i], Body: readFileSync(src), ContentType: "image/jpeg", CacheControl: "public, max-age=31536000, immutable" }));
+  images.push({ url: `/uploads/demo/demo-shortlet-${n}.jpg`, isPrimary: i === 0 });
+}
 
 // 3. The listing (upserted so re-running refreshes it)
 const data = {

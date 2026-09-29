@@ -1,3 +1,4 @@
+import { mediaUrl } from "./media";
 import type { Metadata } from "next";
 
 export const SITE_NAME = "Found Properties";
@@ -24,6 +25,7 @@ export function siteUrl() {
 }
 
 export function absoluteUrl(path = "/") {
+  path = mediaUrl(path);
   if (/^https?:\/\//i.test(path)) return path;
   return `${siteUrl()}${path.startsWith("/") ? path : `/${path}`}`;
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { mediaUrl } from "@/lib/media";
 import { useActionState, useState } from "react";
 import { AlertCircle, X } from "lucide-react";
 import { saveBlog, saveFeatured, saveProject } from "@/app/actions/content";
@@ -46,7 +47,7 @@ function ImageField({ label, name, current, error }: { label: string; name: stri
       <div className="flex items-center gap-4">
         {preview ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={preview} alt="" className="h-20 w-32 rounded-lg object-cover ring-1 ring-slate-200" />
+          <img src={mediaUrl(preview)} alt="" className="h-20 w-32 rounded-lg object-cover ring-1 ring-slate-200" />
         ) : (
           <div className="grid h-20 w-32 place-items-center rounded-lg bg-slate-100 text-xs text-slate-400">No image</div>
         )}
@@ -153,7 +154,7 @@ export function ProjectForm({ project }: { project?: ProjectDoc }) {
               {gallery.map((g) => (
                 <li key={g.url} className="relative">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={g.url} alt="" className="h-20 w-28 rounded-lg object-cover" />
+                  <img src={mediaUrl(g.url)} alt="" className="h-20 w-28 rounded-lg object-cover" />
                   <button type="button" onClick={() => setGallery((x) => x.filter((y) => y.url !== g.url))} className="absolute -right-1.5 -top-1.5 grid size-6 place-items-center rounded-full bg-rose-600 text-white" aria-label="Remove image">
                     <X className="size-3.5" />
                   </button>

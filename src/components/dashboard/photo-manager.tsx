@@ -1,5 +1,6 @@
 "use client";
 
+import { mediaUrl } from "@/lib/media";
 import { useCallback, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { ArrowLeft, ArrowRight, ImagePlus, Loader2, Star, Trash2 } from "lucide-react";
@@ -125,7 +126,7 @@ export function PhotoManager({ items, onChange, error }: { items: PhotoItem[]; o
           {items.map((it, i) => (
             <li key={it.id} className={clsx("group relative overflow-hidden rounded-xl bg-slate-100 ring-2", i === 0 ? "ring-brand-500" : "ring-transparent")}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={it.kind === "new" ? it.preview : it.url} alt="" className="aspect-[4/3] w-full object-cover" />
+              <img src={it.kind === "new" ? it.preview : mediaUrl(it.url)} alt="" className="aspect-[4/3] w-full object-cover" />
               {i === 0 ? (
                 <span className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-brand-600 px-1.5 py-0.5 text-[10px] font-bold text-white">
                   <Star className="size-3 fill-white" /> Cover

@@ -3,6 +3,7 @@ import { existsSync } from "fs";
 import { mkdir, writeFile, unlink } from "fs/promises";
 import path from "path";
 import { randomInt } from "crypto";
+import { deleteObject, putObject, storageEnabled } from "./storage";
 
 const ALLOWED = /^(image\/(jpeg|jpg|png|gif|webp))$/;
 const EXT: Record<string, string> = {
@@ -37,15 +38,30 @@ const MAX_BYTES: Record<Kind, number> = {
   project: 5 * 1024 * 1024,
 };
 
-/** Saves one uploaded image and returns its public URL (e.g. /uploads/property-123.jpeg). */
+/**
+ * Saves one uploaded image and returns its public path (e.g. /uploads/property-123.jpeg).
+ * Goes to Cloudflare R2 when storage is configured, otherwise to the local uploads folder.
+ */
 export async function saveImage(file: File, kind: Kind): Promise<string> {
   if (!ALLOWED.test(file.type)) throw new UploadError("Only image files are allowed (jpeg, jpg, png, gif, webp)");
   if (file.size > MAX_BYTES[kind]) throw new UploadError(`File too large. Maximum size is ${MAX_BYTES[kind] / 1024 / 1024}MB.`);
+  const name = `${kind}-${Date.now()}-${randomInt(1e9)}${EXT[file.type] ?? ".jpg"}`;
+  const publicPath = `/uploads/${SUBDIR[kind] ? `${SUBDIR[kind]}/` : ""}${name}`;
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  if (storageEnabled()) {
+    // Cloudflare R2 / S3
+    try {
+      await putObject(publicPath, bytes, file.type);
+    } catch (e) {
+      console.error("[storage] upload failed", e instanceof Error ? e.message : e);
+      throw new UploadError("Couldn't store the photo right now. Please try again.");
+    }
+    return publicPath;
+  }
   const dir = path.join(/*turbopackIgnore: true*/ uploadRoot(), SUBDIR[kind]);
   await mkdir(dir, { recursive: true });
-  const name = `${kind}-${Date.now()}-${randomInt(1e9)}${EXT[file.type] ?? ".jpg"}`;
-  await writeFile(path.join(dir, name), Buffer.from(await file.arrayBuffer()));
-  return `/uploads/${SUBDIR[kind] ? `${SUBDIR[kind]}/` : ""}${name}`;
+  await writeFile(path.join(dir, name), bytes);
+  return publicPath;
 }
 
 export async function saveImages(files: File[], kind: Kind) {
@@ -58,6 +74,7 @@ export async function saveImages(files: File[], kind: Kind) {
 /** Best-effort delete of a file we previously stored under /uploads. */
 export async function removeUpload(url?: string) {
   if (!url || !url.startsWith("/uploads/")) return;
+  if (storageEnabled()) await deleteObject(url);
   const rel = url.replace(/^\/uploads\//, "");
   const full = path.join(/*turbopackIgnore: true*/ uploadRoot(), rel);
   if (!full.startsWith(uploadRoot())) return;

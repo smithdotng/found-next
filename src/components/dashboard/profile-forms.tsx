@@ -1,5 +1,6 @@
 "use client";
 
+import { mediaUrl } from "@/lib/media";
 import { useActionState, useState } from "react";
 import { BadgeCheck, Camera } from "lucide-react";
 import { changePassword, updateProfile } from "@/app/actions/profile";
@@ -33,7 +34,7 @@ export function ProfileForms({ user }: { user: ProfileUser }) {
         <div className="flex items-center gap-4">
           <label className="group relative size-20 shrink-0 cursor-pointer overflow-hidden rounded-full bg-slate-100">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={avatar} alt="" className="size-full object-cover" />
+            <img src={mediaUrl(avatar)} alt="" className="size-full object-cover" />
             <span className="absolute inset-0 grid place-items-center bg-ink/40 text-white opacity-0 transition group-hover:opacity-100"><Camera className="size-5" /></span>
             <input type="file" name="profileImage" accept="image/*" className="sr-only" onChange={(ev) => { const f = ev.target.files?.[0]; if (f) setPreview(URL.createObjectURL(f)); }} />
           </label>
