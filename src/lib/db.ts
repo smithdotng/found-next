@@ -32,7 +32,13 @@ export async function connectDB() {
   const uri = process.env.MONGODB_URI;
   if (!uri) throw new Error("MONGODB_URI is not set. Copy .env.example to .env.local and fill it in.");
   if (!cache.promise) {
-    cache.promise = mongoose.connect(uri, { bufferCommands: false, serverSelectionTimeoutMS: 8000 });
+    const started = Date.now();
+    cache.promise = mongoose.connect(uri, { bufferCommands: false, serverSelectionTimeoutMS: 15000 }).then((m) => {
+      // One line per new connection. If this appears on every request, or takes several seconds,
+      // run `node --env-file=.env.local scripts/db-check.mjs` to see where the time goes.
+      console.log(`[db] connected to MongoDB in ${Date.now() - started} ms`);
+      return m;
+    });
   }
   try {
     cache.conn = await cache.promise;

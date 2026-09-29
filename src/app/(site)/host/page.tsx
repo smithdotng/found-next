@@ -4,7 +4,7 @@ import Image from "next/image";
 import { ArrowRight, BadgeCheck, CalendarDays, ClipboardCheck, FileSignature, Inbox, LayoutDashboard, UserPlus } from "lucide-react";
 import { pageMetadata } from "@/lib/seo";
 import { formatPrice } from "@/lib/format";
-import { DEFAULT_COMMISSION, commissionFor } from "@/lib/stay";
+import { DEFAULT_COMMISSION, VAT_RATE, commissionFor } from "@/lib/stay";
 
 export const metadata: Metadata = pageMetadata({
   title: "Host on Found Apartments - List Your Shortlet Apartments",
@@ -87,7 +87,10 @@ export default function HostPage() {
               <div className="flex justify-between text-coral-600"><dt>Found commission ({DEFAULT_COMMISSION}%)</dt><dd>−{formatPrice(fee)}</dd></div>
               <div className="flex justify-between border-t border-slate-200 pt-3 text-lg font-bold text-ink"><dt>You keep</dt><dd>{formatPrice(total - fee)}</dd></div>
             </dl>
-            <p className="mt-4 text-xs text-slate-500">You collect payment from the guest directly; commission is settled with Found within 7 days of check-out.</p>
+            <p className="mt-4 text-xs text-slate-500">
+              The guest also pays {VAT_RATE}% VAT ({formatPrice(Math.round((total * VAT_RATE) / 100))} here), which you collect and remit — it isn&apos;t commissionable.
+              You collect payment from the guest directly; commission is settled with Found within 7 days of check-out.
+            </p>
           </div>
         </div>
       </section>

@@ -7,6 +7,14 @@ import type { ShortletDetails } from "./types";
 
 export const DAY_MS = 24 * 60 * 60 * 1000;
 export const DEFAULT_COMMISSION = 25;
+/**
+ * VAT charged to guests on the accommodation total (nightly charges after discounts + cleaning fee).
+ * Nigeria's standard rate is 7.5%. Override with NEXT_PUBLIC_VAT_RATE (set 0 to switch VAT off).
+ */
+export const VAT_RATE = (() => {
+  const v = parseFloat(process.env.NEXT_PUBLIC_VAT_RATE ?? "");
+  return Number.isFinite(v) && v >= 0 ? v : 7.5;
+})();
 
 export function isoDay(d: Date | string) {
   const date = typeof d === "string" ? new Date(d) : d;
@@ -62,6 +70,11 @@ export interface Quote {
   discountPercent: number;
   subtotal: number;
   cleaningFee: number;
+  /** Accommodation before VAT: subtotal + cleaning fee. Commission is based on this. */
+  net: number;
+  vatRate: number;
+  vat: number;
+  /** What the guest pays: net + VAT (caution fee is separate). */
   total: number;
   securityDeposit: number;
 }
@@ -69,10 +82,10 @@ export interface Quote {
 /**
  * Same pricing rules as the Express Property.calculatePrice():
  * Fri & Sat nights use the weekend rate when set; 28+ nights get the monthly
- * discount, 7+ the weekly one; cleaning fee is added once; the caution fee is
- * refundable and shown separately.
+ * discount, 7+ the weekly one; cleaning fee is added once; VAT is added on
+ * the accommodation total; the caution fee is refundable and shown separately.
  */
-export function quoteStay(price: number, sd: ShortletDetails | undefined, checkIn: Date, checkOut: Date): Quote {
+export function quoteStay(price: number, sd: ShortletDetails | undefined, checkIn: Date, checkOut: Date, vatRate = VAT_RATE): Quote {
   const nights = Math.max(0, nightsBetween(checkIn, checkOut));
   const weekendRate = sd?.weekendRate ? Number(sd.weekendRate) : null;
   let base = 0;
@@ -107,12 +120,15 @@ export function quoteStay(price: number, sd: ShortletDetails | undefined, checkI
     discountPercent,
     subtotal,
     cleaningFee,
-    total: subtotal + cleaningFee,
+    net: subtotal + cleaningFee,
+    vatRate,
+    vat: Math.round(((subtotal + cleaningFee) * vatRate) / 100),
+    total: subtotal + cleaningFee + Math.round(((subtotal + cleaningFee) * vatRate) / 100),
     securityDeposit: sd?.securityDeposit ?? 0,
   };
 }
 
-/** Found's share: a percentage of the accommodation total (caution fee excluded). */
+/** Found's share: a percentage of the accommodation total before VAT (caution fee excluded). */
 export function commissionFor(total: number, rate = DEFAULT_COMMISSION) {
   return Math.round((total * rate) / 100);
 }

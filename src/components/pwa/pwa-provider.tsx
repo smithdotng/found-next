@@ -54,8 +54,19 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
   const isStandalone = standalone || installed;
 
   useEffect(() => {
-    if ("serviceWorker" in navigator && process.env.NODE_ENV === "production") {
-      navigator.serviceWorker.register("/sw.js", { scope: "/", updateViaCache: "none" }).catch(() => {});
+    if ("serviceWorker" in navigator) {
+      if (process.env.NODE_ENV === "production") {
+        navigator.serviceWorker.register("/sw.js", { scope: "/", updateViaCache: "none" }).catch(() => {});
+      } else {
+        // In development, remove any worker left over from a production run on this origin
+        // (it would serve stale JavaScript chunks) and clear its caches.
+        navigator.serviceWorker.getRegistrations().then(async (regs) => {
+          if (!regs.length) return;
+          await Promise.all(regs.map((r) => r.unregister()));
+          if ("caches" in window) await Promise.all((await caches.keys()).map((k) => caches.delete(k)));
+          window.location.reload();
+        });
+      }
     }
 
     const onPrompt = (e: Event) => {

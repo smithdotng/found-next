@@ -7,7 +7,7 @@ import { requestBooking } from "@/app/actions/bookings";
 import { SubmitButton } from "@/components/ui/form-bits";
 import { RangeCalendar } from "./range-calendar";
 import { formatPrice } from "@/lib/format";
-import { nightsBetween, nightsSet, parseDay, quoteStay, stayDates, type Range } from "@/lib/stay";
+import { VAT_RATE, nightsBetween, nightsSet, parseDay, quoteStay, stayDates, type Range } from "@/lib/stay";
 import type { ShortletDetails } from "@/lib/types";
 
 type State = { ok: boolean; message: string; errors?: Record<string, string> } | null;
@@ -66,7 +66,10 @@ export function BookingWidget({
       <p className="text-2xl font-extrabold tracking-tight text-ink">
         {formatPrice(price)} <span className="text-sm font-medium text-slate-500">/ night</span>
       </p>
-      {sd.weekendRate ? <p className="text-xs text-slate-500">{formatPrice(sd.weekendRate)} on Friday & Saturday nights</p> : null}
+      <p className="text-xs text-slate-500">
+        {sd.weekendRate ? <>{formatPrice(sd.weekendRate)} on Friday & Saturday nights · </> : null}
+        {VAT_RATE ? `plus ${VAT_RATE}% VAT` : "VAT inclusive"}
+      </p>
 
       <div className={clsx("mt-4 overflow-hidden rounded-xl border", err?.dates ? "border-rose-300" : "border-slate-300")}>
         <button type="button" onClick={() => setShowCal((v) => !v)} className="grid w-full grid-cols-2 divide-x divide-slate-300 text-left">
@@ -133,7 +136,10 @@ export function BookingWidget({
           {q.cleaningFee ? (
             <div className="flex justify-between text-slate-600"><dt>Cleaning fee</dt><dd>{formatPrice(q.cleaningFee)}</dd></div>
           ) : null}
-          <div className="flex justify-between border-t border-slate-200 pt-2 text-base font-bold text-ink"><dt>Total</dt><dd>{formatPrice(q.total)}</dd></div>
+          {q.vat ? (
+            <div className="flex justify-between text-slate-600"><dt>VAT ({q.vatRate}%)</dt><dd>{formatPrice(q.vat)}</dd></div>
+          ) : null}
+          <div className="flex justify-between border-t border-slate-200 pt-2 text-base font-bold text-ink"><dt>Total{q.vat ? " (incl. VAT)" : ""}</dt><dd>{formatPrice(q.total)}</dd></div>
           {q.securityDeposit ? (
             <p className="flex items-start gap-1.5 text-xs text-slate-500"><Info className="mt-0.5 size-3.5 shrink-0" /> Plus a refundable caution fee of {formatPrice(q.securityDeposit)}, returned after check-out.</p>
           ) : null}

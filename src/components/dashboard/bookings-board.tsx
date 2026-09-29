@@ -125,7 +125,9 @@ function Detail({ b, isAdmin, onBack }: { b: ManagedBooking; isAdmin: boolean; o
           <Line label={`Accommodation (${b.dates.nights} night${b.dates.nights > 1 ? "s" : ""})`} value={formatPrice((b.pricing.subtotal ?? 0) + (b.pricing.discount ?? 0))} />
           {b.pricing.discount ? <Line label={`${b.pricing.discountType ?? ""} discount`} value={`−${formatPrice(b.pricing.discount)}`} className="capitalize text-emerald-700" /> : null}
           {b.pricing.cleaningFee ? <Line label="Cleaning fee" value={formatPrice(b.pricing.cleaningFee)} /> : null}
-          <Line label="Guest pays you" value={formatPrice(b.pricing.total)} className="mt-1 border-t border-slate-100 pt-2 font-bold text-ink" />
+          {b.pricing.vat ? <Line label={`VAT (${b.pricing.vatRate}%)`} value={formatPrice(b.pricing.vat)} /> : null}
+          <Line label={b.pricing.vat ? "Guest pays you (incl. VAT)" : "Guest pays you"} value={formatPrice(b.pricing.total)} className="mt-1 border-t border-slate-100 pt-2 font-bold text-ink" />
+          {b.pricing.vat ? <p className="text-xs text-slate-500">VAT is collected from the guest for remittance to the tax authority (NRS); it isn&apos;t your income.</p> : null}
           {b.pricing.securityDeposit ? <Line label="Refundable caution fee" value={formatPrice(b.pricing.securityDeposit)} className="text-slate-500" /> : null}
           {b.commission?.amount ? (
             <div className="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-900">

@@ -93,7 +93,8 @@ export default async function BookingStatusPage({ params, searchParams }: PagePr
         <div className="border-t border-slate-100 p-5 text-sm">
           <div className="flex justify-between text-slate-600"><span>Accommodation</span><span>{formatPrice(b.pricing.subtotal)}</span></div>
           {b.pricing.cleaningFee ? <div className="mt-1 flex justify-between text-slate-600"><span>Cleaning fee</span><span>{formatPrice(b.pricing.cleaningFee)}</span></div> : null}
-          <div className="mt-2 flex justify-between border-t border-slate-100 pt-2 text-base font-bold text-ink"><span>Total</span><span>{formatPrice(b.pricing.total)}</span></div>
+          {b.pricing.vat ? <div className="mt-1 flex justify-between text-slate-600"><span>VAT ({b.pricing.vatRate}%)</span><span>{formatPrice(b.pricing.vat)}</span></div> : null}
+          <div className="mt-2 flex justify-between border-t border-slate-100 pt-2 text-base font-bold text-ink"><span>Total{b.pricing.vat ? " (incl. VAT)" : ""}</span><span>{formatPrice(b.pricing.total)}</span></div>
           {b.pricing.securityDeposit ? <p className="mt-1 text-xs text-slate-500">Plus refundable caution fee {formatPrice(b.pricing.securityDeposit)}</p> : null}
           <p className="mt-2 text-xs text-slate-500">Payment: {b.payment?.status === "paid" ? "received by host" : "not yet paid"}</p>
         </div>

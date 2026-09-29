@@ -14,11 +14,11 @@ export function agreementSections(opts: { rate: number; hostName: string; busine
     },
     {
       title: `3. Found's commission — ${opts.rate}%`,
-      body: `For every stay booked through Found Apartments, the Host pays Found ${opts.rate}% of the accommodation total (nightly charges after discounts, plus any cleaning fee). The refundable caution fee is excluded. Commission is due once the guest checks in and must be paid within 7 days of check-out. It applies to any guest introduced through Found, including repeat or extended stays arranged directly within 12 months of the first booking.`,
+      body: `For every stay booked through Found Apartments, the Host pays Found ${opts.rate}% of the accommodation total (nightly charges after discounts, plus any cleaning fee), before VAT. VAT and the refundable caution fee are excluded. Commission is due once the guest checks in and must be paid within 7 days of check-out. It applies to any guest introduced through Found, including repeat or extended stays arranged directly within 12 months of the first booking.`,
     },
     {
       title: "4. Bookings and payment",
-      body: "Guests send booking requests through Found. The Host accepts or declines each request within 24 hours, and a request not answered within 48 hours may expire. Once a request is accepted, the Host collects payment from the guest directly and records it on the dashboard. The Host keeps the calendar up to date so accepted dates are not double-booked.",
+      body: "Guests send booking requests through Found. The Host accepts or declines each request within 24 hours, and a request not answered within 48 hours may expire. Once a request is accepted, the Host collects payment from the guest directly and records it on the dashboard. Guest prices on Found include VAT at the prevailing rate; the Host is responsible for accounting for and remitting the VAT collected, as required by Nigerian tax law. The Host keeps the calendar up to date so accepted dates are not double-booked.",
     },
     {
       title: "5. Guest care",

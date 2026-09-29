@@ -116,7 +116,7 @@ export function DashboardShell({ user, counts, children }: { user: User; counts:
     <div className="flex h-full flex-col">
       <div className="flex h-16 items-center px-5">
         <Link href="/" aria-label="Found — public site">
-          <Image src="/assets/images/logo2.png" alt="Found" width={1000} height={355} className="-ml-2 h-10 w-auto" />
+          <Image src="/assets/images/logo2.png" alt="Found" width={1000} height={355} priority className="-ml-2 h-10 w-auto" />
         </Link>
       </div>
       <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-4" aria-label="Dashboard">

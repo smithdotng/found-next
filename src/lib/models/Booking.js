@@ -27,6 +27,11 @@ const bookingSchema = new mongoose.Schema({
         securityDeposit: Number,
         discount: { type: Number, default: 0 },
         discountType: { type: String, enum: ['weekly', 'monthly', 'early_bird', 'last_minute', 'custom', null] },
+        // Accommodation before VAT (subtotal + cleaning fee), VAT rate (%) and amount
+        net: Number,
+        vatRate: Number,
+        vat: Number,
+        // What the guest pays, VAT included (caution fee excluded)
         total: { type: Number, required: true }
     },
     payment: {

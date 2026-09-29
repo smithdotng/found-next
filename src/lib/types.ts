@@ -164,7 +164,7 @@ export interface BookingDoc {
   host?: string | { _id: string; name: string; email?: string; phone?: string; hostProfile?: HostProfile };
   guest: { name: string; email: string; phone: string; numberOfGuests: number };
   dates: { checkIn: string; checkOut: string; nights: number };
-  pricing: { nightlyRate?: number; weekendRate?: number; subtotal?: number; cleaningFee?: number; securityDeposit?: number; discount?: number; discountType?: string | null; total: number };
+  pricing: { nightlyRate?: number; weekendRate?: number; subtotal?: number; cleaningFee?: number; securityDeposit?: number; discount?: number; discountType?: string | null; net?: number; vatRate?: number; vat?: number; total: number };
   payment?: { method?: string; status?: "pending" | "paid" | "failed" | "refunded"; paidAt?: string; transactionReference?: string };
   status: BookingStatus;
   specialRequests?: string;

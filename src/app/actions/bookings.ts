@@ -75,12 +75,15 @@ export async function requestBooking(_prev: FormState, fd: FormData): Promise<Fo
       securityDeposit: q.securityDeposit,
       discount: q.discount,
       discountType: q.discountType,
+      net: q.net,
+      vatRate: q.vatRate,
+      vat: q.vat,
       total: q.total,
     },
     payment: { method: "direct", status: "pending" },
     status: "pending",
     specialRequests: s(fd, "message").slice(0, 1000),
-    commission: rate != null ? { rate, amount: commissionFor(q.total, rate), status: "not_due" } : undefined,
+    commission: rate != null ? { rate, amount: commissionFor(q.net, rate), status: "not_due" } : undefined,
     history: [{ status: "pending", by: "guest", note: "Booking requested" }],
   });
 
@@ -88,7 +91,7 @@ export async function requestBooking(_prev: FormState, fd: FormData): Promise<Fo
     ["Apartment", property.title],
     ["Dates", `${stayDates(checkIn!, checkOut!)} · ${nights} night${nights === 1 ? "" : "s"}`],
     ["Guests", String(guests)],
-    ["Total", formatPrice(q.total)],
+    ["Total (incl. VAT)", formatPrice(q.total)],
     ["Reference", booking.bookingReference],
   ];
   void sendMail(
@@ -187,7 +190,7 @@ export async function respondToBooking(id: string, decision: "confirm" | "declin
         rows: [
           ["Apartment", b.propertyTitle],
           ["Dates", stayDates(b.dates.checkIn, b.dates.checkOut)],
-          ["Total", formatPrice(b.pricing.total)],
+          [b.pricing.vat ? "Total (incl. VAT)" : "Total", formatPrice(b.pricing.total)],
           ["Reference", b.bookingReference],
           ...(host?.phone ? ([["Host phone", host.phone]] as [string, string][]) : []),
         ],
