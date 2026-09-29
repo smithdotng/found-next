@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
-import { Home, Search, Heart, User, Building2 } from "lucide-react";
+import { Home, Search, Heart, User, KeyRound } from "lucide-react";
 
 /** App-style bottom navigation for phones and the installed PWA. */
 export function MobileTabBar({ signedIn }: { signedIn: boolean }) {
@@ -11,7 +11,7 @@ export function MobileTabBar({ signedIn }: { signedIn: boolean }) {
   const tabs = [
     { href: "/", label: "Home", icon: Home, match: (p: string) => p === "/" },
     { href: "/properties", label: "Explore", icon: Search, match: (p: string) => p.startsWith("/properties") },
-    { href: "/projects", label: "Projects", icon: Building2, match: (p: string) => p.startsWith("/projects") },
+    { href: "/apartments", label: "Stays", icon: KeyRound, match: (p: string) => p.startsWith("/apartments") },
     { href: "/saved", label: "Saved", icon: Heart, match: (p: string) => p.startsWith("/saved") },
     {
       href: signedIn ? "/dashboard" : "/login",

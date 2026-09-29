@@ -12,7 +12,7 @@ import { formatDate } from "@/lib/format";
 export const metadata = { title: "Enquiries" };
 
 export default async function InquiriesPage({ searchParams }: PageProps<"/dashboard/inquiries">) {
-  const session = await requireUser(["realtor", "admin"]);
+  const session = await requireUser(["realtor", "admin", "host"]);
   const sp = await searchParams;
   const pick = (k: string) => (typeof sp[k] === "string" ? (sp[k] as string) : undefined);
   const view = pick("view") ?? "property";

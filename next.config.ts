@@ -1,7 +1,10 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // This app sits inside the Express project folder; keep Turbopack rooted here.
+  turbopack: { root: path.resolve(__dirname) },
   // Mongoose and nodemailer run on the server only; keep them out of bundling.
   serverExternalPackages: ["mongoose", "nodemailer", "qrcode"],
   experimental: {

@@ -73,7 +73,7 @@ const propertySchema = new mongoose.Schema({
     },
     ownerType: {
         type: String,
-        enum: ['realtor', 'admin'],
+        enum: ['realtor', 'admin', 'host'],
         default: 'realtor'
     },
     status: {

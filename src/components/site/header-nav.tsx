@@ -12,6 +12,7 @@ import { usePwa } from "@/components/pwa/pwa-provider";
 type User = { name: string; type: string } | null;
 
 const links = [
+  { href: "/apartments", label: "Apartments" },
   { href: "/projects", label: "Projects" },
   { href: "/how-it-works", label: "How it works" },
   { href: "/for-realtors", label: "For realtors" },

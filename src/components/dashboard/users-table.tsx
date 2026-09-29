@@ -14,7 +14,7 @@ export type UserRow = {
   name: string;
   email: string;
   phone: string;
-  userType: "realtor" | "agent" | "admin";
+  userType: "realtor" | "agent" | "admin" | "host";
   isSuspended?: boolean;
   createdAt: string;
   listings: number;
@@ -27,6 +27,7 @@ const ROLE = {
   realtor: "bg-brand-50 text-brand-700 ring-brand-600/20",
   agent: "bg-coral-50 text-coral-700 ring-coral-600/20",
   admin: "bg-slate-100 text-slate-700 ring-slate-500/20",
+  host: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
 };
 
 export function UsersTable({ rows, superAdmin, selfId }: { rows: UserRow[]; superAdmin: boolean; selfId: string }) {

@@ -18,11 +18,11 @@ const SECTIONS = [
   { id: "photos", label: "Photos", icon: Camera },
 ];
 
-export function ListingForm({ listing, isAdmin }: { listing?: PropertyDoc; isAdmin: boolean }) {
+export function ListingForm({ listing, isAdmin, shortletOnly = false }: { listing?: PropertyDoc; isAdmin: boolean; shortletOnly?: boolean }) {
   const [state, dispatch, pending] = useActionState(listing ? updateListing : createListing, null);
   const formRef = useRef<HTMLFormElement>(null);
-  const [type, setType] = useState<string>(listing?.propertyType ?? "");
-  const [tx, setTx] = useState<string>(listing?.transactionType ?? "sale");
+  const [type, setType] = useState<string>(shortletOnly ? "shortlet" : listing?.propertyType ?? "");
+  const [tx, setTx] = useState<string>(shortletOnly ? "rent" : listing?.transactionType ?? "sale");
   const [price, setPrice] = useState<string>(listing?.price ? String(listing.price) : "");
   const [title, setTitle] = useState(listing?.title ?? "");
   const [desc, setDesc] = useState(listing?.description ?? "");
@@ -87,10 +87,16 @@ export function ListingForm({ listing, isAdmin }: { listing?: PropertyDoc; isAdm
           <div className="grid gap-5">
             <div>
               <Label htmlFor="title">Listing title</Label>
-              <input id="title" name="title" className="field" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Newly built 4-bedroom duplex with BQ in Lekki Phase 1" maxLength={140} />
+              <input id="title" name="title" className="field" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={shortletOnly ? "e.g. Cosy 2-bedroom apartment with pool, Wuse 2" : "e.g. Newly built 4-bedroom duplex with BQ in Lekki Phase 1"} maxLength={140} />
               <Err e={err("title")} />
             </div>
-            <div>
+            {shortletOnly ? (
+              <>
+                <input type="hidden" name="propertyType" value="shortlet" />
+                <input type="hidden" name="transactionType" value="rent" />
+              </>
+            ) : null}
+            <div className={clsx(shortletOnly && "hidden")}>
               <Label>Property type</Label>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
                 {PROPERTY_TYPES.map((t) => (
@@ -103,7 +109,7 @@ export function ListingForm({ listing, isAdmin }: { listing?: PropertyDoc; isAdm
               <Err e={err("propertyType")} />
             </div>
             <div className="grid gap-5 sm:grid-cols-2">
-              <div>
+              <div className={clsx(shortletOnly && "hidden")}>
                 <Label>Offer type</Label>
                 <div className="grid grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1">
                   {TRANSACTION_TYPES.map((t) => (
@@ -127,7 +133,11 @@ export function ListingForm({ listing, isAdmin }: { listing?: PropertyDoc; isAdm
                   placeholder="0"
                 />
                 <p className="field-hint">
-                  {priceNum ? <>{formatPrice(priceNum)} · agency fee capped at {formatPrice(priceNum * 0.1)} (10%)</> : "Numbers only"}
+                  {priceNum
+                    ? isShortlet
+                      ? <>{formatPrice(priceNum)} per night · set a weekend rate and discounts under Details</>
+                      : <>{formatPrice(priceNum)} · agency fee capped at {formatPrice(priceNum * 0.1)} (10%)</>
+                    : "Numbers only"}
                 </p>
                 <Err e={err("price")} />
               </div>
@@ -289,7 +299,9 @@ export function ListingForm({ listing, isAdmin }: { listing?: PropertyDoc; isAdm
               <Info className="mt-0.5 size-4 shrink-0" />
               {listing && listing.status === "available"
                 ? "Editing a live listing sends it for a quick re-review. Use the status menu to mark it sold or rented instead."
-                : "New listings are reviewed by the Found team before going live, usually within a day."}
+                : shortletOnly
+                  ? "New apartments are reviewed by the Found team. They go live once your host account is vetted and your listing agreement is signed."
+                  : "New listings are reviewed by the Found team before going live, usually within a day."}
             </p>
           ) : null}
         </div>

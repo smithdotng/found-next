@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { after } from "next/server";
 import {
   Bath, BedDouble, Car, Check, ChevronRight, Clock, Eye, MapPin, Ruler, ShieldCheck, Sofa, Toilet, Users, Zap, Droplets, Sparkles, Phone, Pencil,
@@ -60,6 +60,8 @@ export default async function PropertyPage({ params }: PageProps<"/properties/[s
   const { slug } = await params;
   const [p, session] = await Promise.all([getPublicProperty(slug), getSession()]);
   if (!p) notFound();
+  // Shortlets live in Found Apartments, where they can be booked.
+  if (p.propertyType === "shortlet") permanentRedirect(`/apartments/${p.slug}`);
 
   const owner = (typeof p.owner === "object" ? p.owner : null) as OwnerLite | null;
   const isOwner = !!session.userId && owner?._id === session.userId;
@@ -82,7 +84,7 @@ export default async function PropertyPage({ params }: PageProps<"/properties/[s
     f.parkingSpaces ? { icon: Car, label: "Parking", value: f.parkingSpaces } : null,
     f.floorArea ? { icon: Ruler, label: "Floor area", value: `${f.floorArea.toLocaleString()} sqm` } : null,
     f.landArea ? { icon: Ruler, label: "Land area", value: `${f.landArea.toLocaleString()} sqm` } : null,
-    p.propertyType === "shortlet" && sl?.maxGuests ? { icon: Users, label: "Guests", value: sl.maxGuests } : null,
+    (p.propertyType as string) === "shortlet" && sl?.maxGuests ? { icon: Users, label: "Guests", value: sl.maxGuests } : null,
   ].filter(Boolean) as { icon: typeof Bath; label: string; value: string | number }[];
   const amenities = [
     f.furnished && { icon: Sofa, label: "Furnished" },
@@ -177,7 +179,7 @@ export default async function PropertyPage({ params }: PageProps<"/properties/[s
             </section>
           ) : null}
 
-          {p.propertyType === "shortlet" && sl ? (
+          {(p.propertyType as string) === "shortlet" && sl ? (
             <section className="mt-10 rounded-2xl border border-slate-200 p-5 sm:p-6">
               <h2 className="text-lg font-bold text-ink">Stay details</h2>
               <dl className="mt-4 grid grid-cols-2 gap-4 text-sm sm:grid-cols-3">

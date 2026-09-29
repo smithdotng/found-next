@@ -10,7 +10,7 @@ import { PROPERTY_TYPES } from "@/lib/format";
 export const metadata = { title: "Listings" };
 
 export default async function ListingsPage({ searchParams }: PageProps<"/dashboard/listings">) {
-  const session = await requireUser(["realtor", "admin"]);
+  const session = await requireUser(["realtor", "admin", "host"]);
   const sp = await searchParams;
   const pick = (k: string) => (typeof sp[k] === "string" ? (sp[k] as string) : undefined);
   const f = { status: pick("status") ?? "all", q: pick("q"), type: pick("type"), sort: pick("sort"), page: pick("page"), owner: pick("owner") };
@@ -37,7 +37,7 @@ export default async function ListingsPage({ searchParams }: PageProps<"/dashboa
   return (
     <>
       <PageHeader
-        title={isAdmin ? "All listings" : "My listings"}
+        title={isAdmin ? "All listings" : session.userType === "host" ? "My apartments" : "My listings"}
         description={isAdmin ? "Every property on the platform. Filter, review and update status." : "Manage availability, edit details and see which listings get attention."}
         actions={
           <Link href="/dashboard/listings/new" className="btn-primary">

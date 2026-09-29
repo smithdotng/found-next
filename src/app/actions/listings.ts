@@ -129,6 +129,12 @@ async function buildImages(fd: FormData, existing: { url: string }[] = []) {
   return { images: urls.map((url, i) => ({ url, isPrimary: i === 0 })), removed };
 }
 
+/** Hosts on Found Apartments can only list shortlets. */
+function forceShortlet(fd: FormData) {
+  fd.set("propertyType", "shortlet");
+  fd.set("transactionType", "rent");
+}
+
 async function loadOwned(session: AuthedSession, id: string) {
   const property = await Property.findById(id);
   if (!property) return null;
@@ -137,7 +143,8 @@ async function loadOwned(session: AuthedSession, id: string) {
 }
 
 export async function createListing(_prev: FormState, fd: FormData): Promise<FormState> {
-  const session = await requireUser(["realtor", "admin"]);
+  const session = await requireUser(["realtor", "admin", "host"]);
+  if (session.userType === "host") forceShortlet(fd);
   const { errors, data } = readListing(fd);
   if (Object.keys(errors).length) return { ok: false, message: "Some details need attention.", errors };
 
@@ -153,7 +160,7 @@ export async function createListing(_prev: FormState, fd: FormData): Promise<For
     slug: await uniqueSlug(String(data.title)),
     images,
     owner: session.userId,
-    ownerType: session.userType === "admin" ? "admin" : "realtor",
+    ownerType: session.userType === "admin" ? "admin" : session.userType === "host" ? "host" : "realtor",
     // Realtor listings go through review; admins publish directly.
     status: session.userType === "admin" ? "available" : "pending",
     listingTier: "free",
@@ -164,15 +171,18 @@ export async function createListing(_prev: FormState, fd: FormData): Promise<For
     emailService.sendAdminNewPropertyNotification(property, owner).catch((e: unknown) => console.error("Admin notify error:", e));
   }
   revalidatePath("/dashboard", "layout");
-  redirect(
-    `/dashboard/listings?notice=${encodeURIComponent(
-      session.userType === "admin" ? "Listing published" : "Listing submitted — we'll review it shortly and notify you when it's live.",
-    )}`,
-  );
+  const notice =
+    session.userType === "admin"
+      ? "Listing published"
+      : session.userType === "host"
+        ? "Apartment submitted — the Found team will review it. It goes live once you're vetted and your listing agreement is signed."
+        : "Listing submitted — we'll review it shortly and notify you when it's live.";
+  redirect(`/dashboard/listings?notice=${encodeURIComponent(notice)}`);
 }
 
 export async function updateListing(_prev: FormState, fd: FormData): Promise<FormState> {
-  const session = await requireUser(["realtor", "admin"]);
+  const session = await requireUser(["realtor", "admin", "host"]);
+  if (session.userType === "host") forceShortlet(fd);
   const id = s(fd, "id");
   const { errors, data } = readListing(fd);
   if (Object.keys(errors).length) return { ok: false, message: "Some details need attention.", errors };
@@ -203,6 +213,7 @@ export async function updateListing(_prev: FormState, fd: FormData): Promise<For
 
   revalidatePath("/dashboard", "layout");
   revalidatePath(`/properties/${property.slug}`);
+  revalidatePath(`/apartments/${property.slug}`);
   const msg =
     session.userType !== "admin" && wasLive ? "Changes saved and sent for a quick re-review." : "Listing updated.";
   redirect(`/dashboard/listings?notice=${encodeURIComponent(msg)}`);
@@ -212,7 +223,7 @@ const OWNER_STATUSES: PropertyStatus[] = ["available", "sold", "rented", "unavai
 
 /** Quick status change from the listings table (sold/rented/off-market/back on market). */
 export async function setListingStatus(id: string, status: PropertyStatus) {
-  const session = await requireUser(["realtor", "admin"]);
+  const session = await requireUser(["realtor", "admin", "host"]);
   await connectDB();
   const property = await loadOwned(session, id);
   if (!property) return { ok: false, message: "Listing not found" };
@@ -229,7 +240,7 @@ export async function setListingStatus(id: string, status: PropertyStatus) {
 }
 
 export async function deleteListing(id: string) {
-  const session = await requireUser(["realtor", "admin"]);
+  const session = await requireUser(["realtor", "admin", "host"]);
   await connectDB();
   const property = await loadOwned(session, id);
   if (!property) return { ok: false, message: "Listing not found" };
@@ -249,6 +260,12 @@ export async function deleteListing(id: string) {
 export async function approveListing(id: string) {
   await requireUser(["admin"]);
   await connectDB();
+  const listing = await Property.findById(id).select("owner").populate("owner", "userType hostProfile.status hostProfile.agreement.status");
+  const owner = listing?.owner as { userType?: string; hostProfile?: { status?: string; agreement?: { status?: string } } } | undefined;
+  if (owner?.userType === "host") {
+    if (owner.hostProfile?.status !== "approved") return { ok: false, message: "Vet and approve this host first (Hosts page)." };
+    if (owner.hostProfile?.agreement?.status !== "accepted") return { ok: false, message: "The host hasn't signed the listing agreement yet." };
+  }
   await Property.updateOne({ _id: id }, { $set: { status: "available" }, $unset: { rejectionReason: "" } });
   revalidatePath("/dashboard", "layout");
   return { ok: true, message: "Listing approved and live" };
@@ -284,7 +301,7 @@ async function loadInquiry(session: AuthedSession, id: string) {
 }
 
 export async function markInquiry(id: string, read: boolean) {
-  const session = await requireUser(["realtor", "admin"]);
+  const session = await requireUser(["realtor", "admin", "host"]);
   await connectDB();
   const inquiry = await loadInquiry(session, id);
   if (!inquiry) return { ok: false, message: "Not found" };
@@ -295,7 +312,7 @@ export async function markInquiry(id: string, read: boolean) {
 }
 
 export async function replyInquiry(id: string, message: string) {
-  const session = await requireUser(["realtor", "admin"]);
+  const session = await requireUser(["realtor", "admin", "host"]);
   if (message.trim().length < 2) return { ok: false, message: "Write a reply first" };
   await connectDB();
   const inquiry = await loadInquiry(session, id);

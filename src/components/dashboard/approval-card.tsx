@@ -67,7 +67,16 @@ export function ApprovalCard({ p }: { p: PropertyDoc }) {
             ))}
           </div>
           <div className="mt-4 flex items-center gap-2 text-sm text-slate-600">
-            <span className="font-medium text-ink">{owner?.realtorProfile?.company || owner?.name}</span>
+            <span className="font-medium text-ink">{owner?.hostProfile?.businessName || owner?.realtorProfile?.company || owner?.name}</span>
+            {owner?.userType === "host" ? (
+              owner.hostProfile?.status !== "approved" ? (
+                <a href="/dashboard/hosts?status=pending" className="chip bg-amber-50 text-amber-800 ring-amber-600/20">Host not vetted yet</a>
+              ) : owner.hostProfile?.agreement?.status !== "accepted" ? (
+                <a href="/dashboard/hosts?status=unsigned" className="chip bg-amber-50 text-amber-800 ring-amber-600/20">Agreement not signed</a>
+              ) : (
+                <span className="chip bg-emerald-50 text-emerald-700 ring-emerald-600/20">Host · agreement signed</span>
+              )
+            ) : null}
             {owner?.realtorProfile?.verified ? <ShieldCheck className="size-4 text-emerald-600" aria-label="Verified realtor" /> : null}
             {owner?.email ? <a href={`mailto:${owner.email}`} className="text-brand-600 hover:underline">{owner.email}</a> : null}
             <span className="text-slate-400">· submitted {timeAgo(p.createdAt)}</span>
@@ -100,7 +109,7 @@ export function ApprovalCard({ p }: { p: PropertyDoc }) {
                 <X className="size-4" /> Reject…
               </button>
               <Link href={`/dashboard/listings/${p._id}/edit`} className="btn-ghost"><Pencil className="size-4" /> Edit</Link>
-              <Link href={`/properties/${p.slug}`} target="_blank" className="btn-ghost"><ExternalLink className="size-4" /> Preview</Link>
+              <Link href={`/${p.propertyType === "shortlet" ? "apartments" : "properties"}/${p.slug}`} target="_blank" className="btn-ghost"><ExternalLink className="size-4" /> Preview</Link>
             </div>
           )}
         </div>

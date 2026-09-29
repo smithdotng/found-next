@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema({
     },
     userType: {
         type: String,
-        enum: ['realtor', 'agent', 'admin'],
+        enum: ['realtor', 'agent', 'admin', 'host'],
         default: 'realtor'
     },
     profileImage: {
@@ -48,6 +48,43 @@ const userSchema = new mongoose.Schema({
         verified: {
             type: Boolean,
             default: false
+        }
+    },
+    // Found Apartments host (shortlet owner/operator). Added by the Next.js app.
+    hostProfile: {
+        businessName: String,
+        address: String,
+        city: String,
+        state: String,
+        units: Number,
+        experience: String,
+        idType: String,
+        about: String,
+        // Vetting by the Found team
+        status: {
+            type: String,
+            enum: ['pending', 'approved', 'rejected'],
+            default: 'pending'
+        },
+        reviewNote: String,
+        reviewedAt: Date,
+        reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        // Found's share of each booking, agreed in the listing agreement
+        commissionRate: { type: Number, default: 25 },
+        agreement: {
+            status: { type: String, enum: ['none', 'sent', 'accepted'], default: 'none' },
+            version: String,
+            commissionRate: Number,
+            sentAt: Date,
+            acceptedAt: Date,
+            signedName: String,
+            signedIp: String,
+            signedUserAgent: String
+        },
+        bankDetails: {
+            bankName: String,
+            accountNumber: String,
+            accountName: String
         }
     },
     // Agent specific fields

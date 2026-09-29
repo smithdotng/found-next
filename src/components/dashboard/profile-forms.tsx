@@ -10,8 +10,9 @@ export type ProfileUser = {
   name: string;
   email: string;
   phone: string;
-  userType: "realtor" | "agent" | "admin";
+  userType: "realtor" | "agent" | "admin" | "host";
   profileImage?: string;
+  hostProfile?: { businessName?: string; address?: string; city?: string; about?: string };
   realtorProfile?: { company?: string; rcNumber?: string; address?: string; verified?: boolean };
   agentProfile?: { socialHandle?: string; uniqueLink?: string };
   preferences?: { emailInquiries?: boolean; emailTransactions?: boolean; weeklyNewsletter?: boolean; marketingEmails?: boolean };
@@ -55,6 +56,16 @@ export function ProfileForms({ user }: { user: ProfileUser }) {
             </>
           ) : null}
           {user.userType === "agent" ? <TextField label="Social handle" name="socialHandle" defaultValue={user.agentProfile?.socialHandle} /> : null}
+          {user.userType === "host" ? (
+            <>
+              <TextField label="Business / brand name" name="businessName" defaultValue={user.hostProfile?.businessName} hint="Shown to guests as your host name" />
+              <TextField label="City / area" name="city" defaultValue={user.hostProfile?.city} />
+              <div className="sm:col-span-2">
+                <label className="field-label" htmlFor="f-about">About you as a host</label>
+                <textarea id="f-about" name="about" rows={3} className="field" defaultValue={user.hostProfile?.about} placeholder="A short welcome guests will see" />
+              </div>
+            </>
+          ) : null}
         </div>
         <fieldset>
           <legend className="field-label">Email notifications</legend>

@@ -23,6 +23,7 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/icons/maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
     shortcuts: [
+      { name: "Book an apartment", short_name: "Stays", url: "/apartments?source=pwa", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
       { name: "Search properties", short_name: "Search", url: "/properties?source=pwa", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
       { name: "Saved properties", short_name: "Saved", url: "/saved?source=pwa", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
       { name: "My dashboard", short_name: "Dashboard", url: "/dashboard?source=pwa", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },

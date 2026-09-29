@@ -12,7 +12,7 @@ export default async function ApprovalsPage() {
   await requireUser(["admin"]);
   await connectDB();
   const items = toPlain<PropertyDoc[]>(
-    await Property.find({ status: "pending" }).sort("createdAt").populate("owner", "name email phone realtorProfile createdAt").lean(),
+    await Property.find({ status: "pending" }).sort("createdAt").populate("owner", "name email phone realtorProfile createdAt userType hostProfile.businessName hostProfile.status hostProfile.agreement.status").lean(),
   );
   return (
     <>

@@ -39,6 +39,41 @@ for realtors, contact, FAQ, terms, privacy, HTML and XML sitemaps, robots.txt, `
 
 Old Express URLs (`/admin/...`, `/realtor/...`, `/agent/dashboard`, `/properties/add/new` …) redirect to the new pages.
 
+## Found Apartments (shortlets)
+
+A shortlet booking section at **`/apartments`**, sharing the same database, logins and uploads.
+
+**Guests:** search by area, dates and guests, filter by budget, bedrooms and amenities, then open an apartment
+(`/apartments/<slug>`) to see a live availability calendar, a price breakdown (weekend rate, weekly/monthly
+discounts, cleaning fee, refundable caution fee) and **request to book**. No payment happens online: the host
+confirms, then arranges payment directly. Guests track the request at a private link
+(`/apartments/booking/<ref>?t=…`) that's emailed to them, and can withdraw or cancel there.
+
+**Hosts** are a new account type (`userType: "host"`):
+1. Apply at `/host/register`. `/host` explains how hosting works.
+2. An admin vets them on **Dashboard → Hosts**, sets the commission (default **25%**) and approves. This sends the agreement.
+3. The host reads and signs the **listing agreement** at `/dashboard/agreement`. The typed name, time, IP and user agent are
+   stored in `hostProfile.agreement`, and a printable copy is available. Changing a host's rate requires a fresh signature.
+4. Host apartments are shortlet listings (`propertyType: "shortlet"`, `ownerType: "host"`). They go through the normal
+   approval queue, but **can't be approved until the host is vetted and has signed**.
+
+Host dashboard: overview and onboarding checklist, **Bookings** (accept or decline with a note, record payment, check in and out,
+no-show, cancel), **Calendar** (confirmed stays, requests and blocked dates; block nights for personal use), apartments,
+enquiries, agreement and profile. Realtors who list shortlets get the same Bookings and Calendar pages.
+
+Admin: **Hosts** (vetting, commission, agreements), **Bookings** across all hosts with commission tracking
+(not due → due at check-in → record as received / waive), and a Found Apartments summary on the overview.
+
+Rules worth knowing:
+- Only confirmed or checked-in stays and host blocks hold dates. Requests don't, so accepting re-checks for clashes.
+- A request not answered within 48 hours, or whose check-in date has passed, expires automatically.
+- Commission = rate × (nightly charges after discounts + cleaning fee). The caution fee is excluded.
+- `/properties/<slug>` for a shortlet permanently redirects to `/apartments/<slug>`. The sitemap lists shortlets under `/apartments`.
+- Booking emails use `src/lib/mailer.ts` with the same SMTP settings. Without SMTP they're skipped and logged.
+
+New collections: `bookings` (the Express Booking schema, extended) and `blockeddates`. The Express app's User schema
+doesn't know the `host` type, so hosts should use the Next.js app.
+
 ## OG / SEO tags
 
 Every page builds its tags through `src/lib/seo.ts`, which keeps the Express header's set:

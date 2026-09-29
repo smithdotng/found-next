@@ -30,6 +30,11 @@ export async function updateProfile(_prev: Result, fd: FormData): Promise<Result
   if (user.userType === "agent") {
     user.agentProfile.socialHandle = s(fd, "socialHandle");
   }
+  if (user.userType === "host") {
+    user.hostProfile.businessName = s(fd, "businessName");
+    user.hostProfile.city = s(fd, "city") || user.hostProfile.city;
+    user.hostProfile.about = s(fd, "about").slice(0, 800);
+  }
   const optIn = fd.get("weeklyNewsletter") === "on";
   user.preferences = {
     emailInquiries: fd.get("emailInquiries") === "on",

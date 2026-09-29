@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import Script from "next/script";
 import "./globals.css";
 import { DEFAULT_TITLE, DEFAULT_DESCRIPTION, siteUrl, pageMetadata, COMPANY } from "@/lib/seo";
 import { PwaProvider } from "@/components/pwa/pwa-provider";
@@ -55,23 +56,19 @@ const GA_ID = process.env.NEXT_PUBLIC_GA_ID ?? "G-H8R24Q91C0";
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en-NG" className={`${jakarta.variable} h-full`}>
-      <head>
-        {GA_ID ? (
-          <>
-            <script async src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} />
-            <script
-              dangerouslySetInnerHTML={{
-                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_ID}');`,
-              }}
-            />
-          </>
-        ) : null}
-      </head>
       <body className="min-h-full">
         <PwaProvider>
           {children}
           <Toaster />
         </PwaProvider>
+        {GA_ID ? (
+          <>
+            <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="afterInteractive" />
+            <Script id="ga-init" strategy="afterInteractive">
+              {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_ID}');`}
+            </Script>
+          </>
+        ) : null}
       </body>
     </html>
   );

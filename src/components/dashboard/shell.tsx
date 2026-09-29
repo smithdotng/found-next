@@ -7,14 +7,36 @@ import { useState } from "react";
 import clsx from "clsx";
 import {
   LayoutDashboard, Building2, PlusCircle, Inbox, UserCircle, LogOut, Menu, X, ClipboardCheck, Users, Newspaper, Star, Landmark,
-  Megaphone, Search, Wallet, ExternalLink, Download, Receipt, Mail,
+  Megaphone, Search, Wallet, ExternalLink, Download, Receipt, Mail, CalendarCheck, CalendarDays, FileSignature, KeyRound,
 } from "lucide-react";
 import { usePwa } from "@/components/pwa/pwa-provider";
 
 type NavItem = { href: string; label: string; icon: typeof Inbox; badge?: number; exact?: boolean };
-type User = { name: string; email: string; type: "realtor" | "agent" | "admin"; superAdmin: boolean };
+type User = { name: string; email: string; type: "realtor" | "agent" | "admin" | "host"; superAdmin: boolean };
+type Counts = { approvals: number; inquiries: number; bookings: number; hosts: number };
 
-function navFor(user: User, counts: { approvals: number; inquiries: number }): { title?: string; items: NavItem[] }[] {
+function navFor(user: User, counts: Counts): { title?: string; items: NavItem[] }[] {
+  if (user.type === "host") {
+    return [
+      {
+        items: [
+          { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
+          { href: "/dashboard/bookings", label: "Bookings", icon: CalendarCheck, badge: counts.bookings },
+          { href: "/dashboard/calendar", label: "Calendar", icon: CalendarDays },
+          { href: "/dashboard/listings", label: "My apartments", icon: Building2 },
+          { href: "/dashboard/listings/new", label: "Add apartment", icon: PlusCircle, exact: true },
+          { href: "/dashboard/inquiries", label: "Enquiries", icon: Inbox, badge: counts.inquiries },
+        ],
+      },
+      {
+        title: "Account",
+        items: [
+          { href: "/dashboard/agreement", label: "Listing agreement", icon: FileSignature },
+          { href: "/dashboard/profile", label: "Profile & settings", icon: UserCircle },
+        ],
+      },
+    ];
+  }
   if (user.type === "agent") {
     return [
       {
@@ -41,6 +63,14 @@ function navFor(user: User, counts: { approvals: number; inquiries: number }): {
         ],
       },
       {
+        title: "Found Apartments",
+        items: [
+          { href: "/dashboard/bookings", label: "Bookings", icon: CalendarCheck, badge: counts.bookings },
+          { href: "/dashboard/hosts", label: "Hosts", icon: KeyRound, badge: counts.hosts },
+          { href: "/dashboard/calendar", label: "Calendar", icon: CalendarDays },
+        ],
+      },
+      {
         title: "Content",
         items: [
           { href: "/dashboard/projects", label: "Projects", icon: Landmark },
@@ -60,15 +90,16 @@ function navFor(user: User, counts: { approvals: number; inquiries: number }): {
         { href: "/dashboard/listings", label: "My listings", icon: Building2 },
         { href: "/dashboard/listings/new", label: "Add listing", icon: PlusCircle, exact: true },
         { href: "/dashboard/inquiries", label: "Enquiries", icon: Inbox, badge: counts.inquiries },
+        { href: "/dashboard/bookings", label: "Shortlet bookings", icon: CalendarCheck, badge: counts.bookings },
       ],
     },
     { title: "Account", items: [{ href: "/dashboard/profile", label: "Profile & settings", icon: UserCircle }] },
   ];
 }
 
-const ROLE_LABEL = { realtor: "Realtor", agent: "Agent", admin: "Administrator" };
+const ROLE_LABEL = { realtor: "Realtor", agent: "Agent", admin: "Administrator", host: "Host · Found Apartments" };
 
-export function DashboardShell({ user, counts, children }: { user: User; counts: { approvals: number; inquiries: number }; children: React.ReactNode }) {
+export function DashboardShell({ user, counts, children }: { user: User; counts: Counts; children: React.ReactNode }) {
   const pathname = usePathname();
   const [openOn, setOpenOn] = useState<string | null>(null);
   const open = openOn === pathname;
@@ -147,9 +178,9 @@ export function DashboardShell({ user, counts, children }: { user: User; counts:
 
   return (
     <div className="min-h-dvh bg-slate-50">
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-slate-200 bg-white lg:block">{sidebar}</aside>
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-slate-200 bg-white lg:block print:!hidden">{sidebar}</aside>
 
-      <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-slate-200 bg-white/90 px-4 backdrop-blur lg:hidden">
+      <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-slate-200 bg-white/90 px-4 backdrop-blur lg:hidden print:hidden">
         <button onClick={() => setOpen(true)} className="btn-ghost !px-2" aria-label="Open navigation">
           <Menu className="size-5" />
         </button>
@@ -177,7 +208,7 @@ export function DashboardShell({ user, counts, children }: { user: User; counts:
         </div>
       ) : null}
 
-      <main className="lg:pl-64">
+      <main className="lg:pl-64 print:!pl-0">
         <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-10 lg:py-10">{children}</div>
       </main>
     </div>

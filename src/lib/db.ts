@@ -14,6 +14,8 @@ import "./models/Transaction";
 import "./models/Withdrawal";
 import "./models/Favorite";
 import "./models/NewsletterCampaign";
+import "./models/Booking";
+import "./models/BlockedDate";
 
 type Cache = { conn: typeof mongoose | null; promise: Promise<typeof mongoose> | null };
 

@@ -12,7 +12,7 @@ import type { PropertyDoc } from "@/lib/types";
 export const metadata = { title: "Edit listing" };
 
 export default async function EditListingPage({ params }: PageProps<"/dashboard/listings/[id]/edit">) {
-  const session = await requireUser(["realtor", "admin"]);
+  const session = await requireUser(["realtor", "admin", "host"]);
   const { id } = await params;
   if (!/^[a-f0-9]{24}$/i.test(id)) notFound();
   await connectDB();
@@ -25,10 +25,10 @@ export default async function EditListingPage({ params }: PageProps<"/dashboard/
   return (
     <>
       <Link href="/dashboard/listings" className="mb-3 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-ink">
-        <ArrowLeft className="size-4" /> Listings
+        <ArrowLeft className="size-4" /> {session.userType === "host" ? "My apartments" : "Listings"}
       </Link>
       <PageHeader
-        title="Edit listing"
+        title={session.userType === "host" ? "Edit apartment" : "Edit listing"}
         description={
           <span className="flex flex-wrap items-center gap-3">
             <StatusBadge status={p.status} />
@@ -38,12 +38,20 @@ export default async function EditListingPage({ params }: PageProps<"/dashboard/
           </span>
         }
         actions={
-          <Link href={`/properties/${p.slug}`} target="_blank" className="btn-outline">
+          <Link href={`/${p.propertyType === "shortlet" ? "apartments" : "properties"}/${p.slug}`} target="_blank" className="btn-outline">
             <ExternalLink className="size-4" /> View
           </Link>
         }
       />
-      <ListingForm listing={p} isAdmin={session.userType === "admin"} />
+      <>
+        {p.propertyType === "shortlet" ? (
+          <p className="mb-4 flex flex-wrap gap-3 text-sm">
+            <Link href={`/dashboard/bookings?property=${p._id}`} className="btn-outline btn-sm">Bookings for this apartment</Link>
+            <Link href={`/dashboard/calendar?property=${p._id}`} className="btn-outline btn-sm">Availability calendar</Link>
+          </p>
+        ) : null}
+        <ListingForm listing={p} isAdmin={session.userType === "admin"} shortletOnly={session.userType === "host"} />
+      </>
     </>
   );
 }

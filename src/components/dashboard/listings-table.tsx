@@ -147,7 +147,7 @@ function RowActions({ p, isAdmin }: { p: Row; isAdmin: boolean }) {
       </button>
       {open ? (
         <div className="absolute right-0 z-30 mt-1 w-56 origin-top-right rounded-xl border border-slate-200 bg-white p-1 text-sm shadow-lift animate-fade-in">
-          <MenuLink href={`/properties/${p.slug}`} icon={ExternalLink} external>View listing</MenuLink>
+          <MenuLink href={`/${p.propertyType === "shortlet" ? "apartments" : "properties"}/${p.slug}`} icon={ExternalLink} external>View listing</MenuLink>
           <MenuLink href={`/dashboard/listings/${p._id}/edit`} icon={Pencil}>Edit details & photos</MenuLink>
           <MenuLink href={`/dashboard/inquiries?property=${p._id}`} icon={Inbox}>Enquiries ({p.leads})</MenuLink>
           {isAdmin && p.status === "pending" ? (

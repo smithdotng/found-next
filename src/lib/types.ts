@@ -1,4 +1,4 @@
-export type UserType = "realtor" | "agent" | "admin";
+export type UserType = "realtor" | "agent" | "admin" | "host";
 
 export type PropertyType = "shortlet" | "land" | "building" | "shop" | "business_complex";
 export type TransactionType = "rent" | "sale" | "lease";
@@ -17,6 +17,8 @@ export interface OwnerLite {
   phone?: string;
   profileImage?: string;
   realtorProfile?: { company?: string; verified?: boolean };
+  userType?: UserType;
+  hostProfile?: HostProfile;
 }
 
 export interface ShortletDetails {
@@ -150,4 +152,46 @@ export interface BlogDoc {
   metaKeywords?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export type BookingStatus = "pending" | "confirmed" | "declined" | "expired" | "checked_in" | "checked_out" | "cancelled" | "no_show";
+
+export interface BookingDoc {
+  _id: string;
+  bookingReference: string;
+  property: string | (Pick<PropertyDoc, "_id" | "title" | "slug" | "images" | "location" | "shortletDetails"> & { owner?: string });
+  propertyTitle?: string;
+  host?: string | { _id: string; name: string; email?: string; phone?: string; hostProfile?: HostProfile };
+  guest: { name: string; email: string; phone: string; numberOfGuests: number };
+  dates: { checkIn: string; checkOut: string; nights: number };
+  pricing: { nightlyRate?: number; weekendRate?: number; subtotal?: number; cleaningFee?: number; securityDeposit?: number; discount?: number; discountType?: string | null; total: number };
+  payment?: { method?: string; status?: "pending" | "paid" | "failed" | "refunded"; paidAt?: string; transactionReference?: string };
+  status: BookingStatus;
+  specialRequests?: string;
+  hostNote?: string;
+  declineReason?: string;
+  confirmedAt?: string;
+  cancellation?: { cancelledAt?: string; reason?: string; byGuest?: boolean };
+  commission?: { rate?: number; amount?: number; status?: "not_due" | "due" | "paid" | "waived"; paidAt?: string; reference?: string };
+  history?: { status: string; at: string; by?: string; note?: string }[];
+  accessToken?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface HostProfile {
+  businessName?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  units?: number;
+  experience?: string;
+  idType?: string;
+  about?: string;
+  status?: "pending" | "approved" | "rejected";
+  reviewNote?: string;
+  reviewedAt?: string;
+  commissionRate?: number;
+  agreement?: { status?: "none" | "sent" | "accepted"; version?: string; commissionRate?: number; sentAt?: string; acceptedAt?: string; signedName?: string; signedIp?: string };
+  bankDetails?: { bankName?: string; accountNumber?: string; accountName?: string };
 }

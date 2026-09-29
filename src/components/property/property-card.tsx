@@ -45,7 +45,7 @@ export function PropertyCard({ p, priority = false }: { p: PropertyDoc; priority
       <div className="flex flex-1 flex-col p-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-brand-600">{typeLabel(p.propertyType)}</p>
         <h3 className="mt-1 line-clamp-2 text-[15px] font-semibold leading-snug text-ink">
-          <Link href={`/properties/${p.slug}`} className="after:absolute after:inset-0">
+          <Link href={p.propertyType === "shortlet" ? `/apartments/${p.slug}` : `/properties/${p.slug}`} className="after:absolute after:inset-0">
             {p.title}
           </Link>
         </h3>
