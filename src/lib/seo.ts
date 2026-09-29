@@ -9,8 +9,18 @@ export const DEFAULT_KEYWORDS =
   "property, real estate, nigeria, lagos, abuja, port harcourt, rent, sale, shortlet, land, building, shop, business complex, realtor, agent";
 export const DEFAULT_OG_IMAGE = "/assets/images/og-1200x630.jpg";
 
+/**
+ * Public site address. Accepts BASE_URL with or without a scheme ("found.ng" or
+ * "https://found.ng"); falls back to the Vercel deployment URL, then https://found.ng.
+ */
 export function siteUrl() {
-  return (process.env.BASE_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://found.ng").replace(/\/$/, "");
+  const raw = (process.env.BASE_URL || process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL || "found.ng").trim();
+  const withScheme = /^https?:\/\//i.test(raw) ? raw : `${/^(localhost|127\.|\[::1\])/.test(raw) ? "http" : "https"}://${raw}`;
+  try {
+    return new URL(withScheme).origin;
+  } catch {
+    return "https://found.ng";
+  }
 }
 
 export function absoluteUrl(path = "/") {

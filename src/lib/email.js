@@ -1,6 +1,7 @@
 // Ported from the Express app's utils/email.js (same templates and SMTP settings).
 // utils/email.js
 import nodemailer from 'nodemailer';
+import { siteUrl } from './seo';
 
 // Create transporter for Hostinger
 const createTransporter = () => {
@@ -76,7 +77,7 @@ const sendWelcomeEmailToRealtor = async (user) => {
             return false;
         }
         
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const baseUrl = siteUrl();
         
         const mailOptions = {
             from: `"Found Projects" <${process.env.EMAIL_FROM || 'noreply@found.ng'}>`,
@@ -165,7 +166,7 @@ const sendWelcomeEmailToAgent = async (user) => {
             return false;
         }
         
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const baseUrl = siteUrl();
         
         const mailOptions = {
             from: `"Found Projects" <${process.env.EMAIL_FROM || 'noreply@found.ng'}>`,
@@ -238,7 +239,7 @@ const sendAgentApprovalEmail = async (agent) => {
             return false;
         }
         
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const baseUrl = siteUrl();
         
         const mailOptions = {
             from: `"Found Projects" <${process.env.EMAIL_FROM || 'noreply@found.ng'}>`,
@@ -308,7 +309,7 @@ const sendInquiryNotificationToRealtor = async (inquiry, property, realtor) => {
             return false;
         }
         
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const baseUrl = siteUrl();
         
         const mailOptions = {
             from: `"Found Projects" <${process.env.EMAIL_FROM || 'noreply@found.ng'}>`,
@@ -391,7 +392,7 @@ const sendInquiryNotificationToAgent = async (inquiry, property, agent) => {
             return false;
         }
         
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const baseUrl = siteUrl();
         
         const mailOptions = {
             from: `"Found Projects" <${process.env.EMAIL_FROM || 'noreply@found.ng'}>`,
@@ -475,7 +476,7 @@ const sendAdminInquiryNotification = async (inquiry, property) => {
         }
         
         const adminEmail = process.env.ADMIN_EMAIL || 'admin@found.ng';
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const baseUrl = siteUrl();
         
         const mailOptions = {
             from: `"Found Projects" <${process.env.EMAIL_FROM || 'noreply@found.ng'}>`,
@@ -553,7 +554,7 @@ const sendInquiryReplyEmail = async (inquiry, replyMessage, repliedBy) => {
             return false;
         }
         
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const baseUrl = siteUrl();
         const propertyUrl = `${baseUrl}/properties/${inquiry.property?.slug}`;
         
         const mailOptions = {
@@ -632,7 +633,7 @@ const sendPasswordResetEmail = async (user, resetToken) => {
             return false;
         }
         
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const baseUrl = siteUrl();
         const resetLink = `${baseUrl}/reset-password/${resetToken}`;
         
         const mailOptions = {
@@ -705,7 +706,7 @@ const sendAdminNewAccountNotification = async (user) => {
         }
 
         const adminEmail = process.env.ADMIN_EMAIL || 'admin@found.ng';
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const baseUrl = siteUrl();
         const accountType = user.userType === 'agent' ? 'Agent' : 'Realtor';
 
         const mailOptions = {
@@ -783,7 +784,7 @@ const sendAdminNewPropertyNotification = async (property, owner) => {
         }
 
         const adminEmail = process.env.ADMIN_EMAIL || 'admin@found.ng';
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const baseUrl = siteUrl();
         const loc = property.location || {};
         const locationText = [loc.city, loc.state].filter(Boolean).join(', ') || 'Not specified';
 
@@ -982,7 +983,7 @@ const sendAdminMessageToRealtor = async (realtor, subject, message) => {
 
 // Wrap campaign content in the branded, hero-bg styled template
 const buildNewsletterHtml = (subject, contentHtml, unsubscribeUrl) => {
-    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+    const baseUrl = siteUrl();
     const heroUrl = `${baseUrl}/assets/images/hero-bg.jpg`;
 
     return `
@@ -1033,7 +1034,7 @@ const sendNewsletterEmail = async (recipient, subject, contentHtml) => {
             return false;
         }
 
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const baseUrl = siteUrl();
         const unsubscribeUrl = recipient._id ? `${baseUrl}/unsubscribe/${recipient._id}` : '';
 
         const mailOptions = {
