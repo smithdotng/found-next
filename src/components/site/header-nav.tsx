@@ -4,7 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import clsx from "clsx";
-import { ChevronDown, Heart, LayoutDashboard, Menu, Plus, X, LogOut, Download } from "lucide-react";
+import { createPortal } from "react-dom";
+import Image from "next/image";
+import { ChevronDown, ChevronRight, Heart, KeyRound, LayoutDashboard, Menu, Plus, X, LogOut, Download } from "lucide-react";
 import { PROPERTY_TYPES } from "@/lib/format";
 import { useSaved } from "@/components/property/saved-store";
 import { usePwa } from "@/components/pwa/pwa-provider";
@@ -104,70 +106,135 @@ export function HeaderNav({ user }: { user: User }) {
         </button>
       </div>
 
-      {open ? (
-        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
-          <div className="absolute inset-0 bg-ink/40 animate-fade-in" onClick={() => setOpen(false)} />
-          <div className="absolute inset-y-0 right-0 flex w-[86%] max-w-sm flex-col bg-white shadow-lift animate-slide-up">
-            <div className="flex h-16 items-center justify-between border-b border-slate-100 px-5">
-              <span className="text-sm font-semibold text-slate-500">Menu</span>
-              <button className="btn-ghost !px-2" onClick={() => setOpen(false)} aria-label="Close menu">
-                <X className="size-5" />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto px-3 py-4">
-              <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Browse</p>
-              <MobileLink href="/properties">All properties</MobileLink>
-              {PROPERTY_TYPES.map((t) => (
-                <MobileLink key={t.value} href={`/properties?type=${t.value}`}>
-                  {t.plural}
-                </MobileLink>
-              ))}
-              <p className="px-3 pb-2 pt-5 text-xs font-semibold uppercase tracking-wider text-slate-400">Found</p>
-              {links.map((l) => (
-                <MobileLink key={l.href} href={l.href}>
-                  {l.label}
-                </MobileLink>
-              ))}
-              <MobileLink href="/agent/register">Become an agent</MobileLink>
-              <MobileLink href="/about">About us</MobileLink>
-              <MobileLink href="/contact">Contact</MobileLink>
-            </div>
-            <div className="space-y-2 border-t border-slate-100 p-4 safe-bottom">
-              {canInstall ? (
-                <button onClick={install} className="btn-outline w-full">
-                  <Download className="size-4" /> Install the Found app
-                </button>
-              ) : null}
-              {user ? (
-                <>
-                  <Link href="/dashboard" className="btn-primary w-full">
-                    <LayoutDashboard className="size-4" /> Go to dashboard
-                  </Link>
-                  <a href="/logout" className="btn-ghost w-full">
-                    <LogOut className="size-4" /> Sign out
-                  </a>
-                </>
-              ) : (
-                <>
-                  <Link href="/register" className="btn-primary w-full">
-                    <Plus className="size-4" /> List a property
-                  </Link>
-                  <Link href="/login" className="btn-outline w-full">
-                    Sign in
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      ) : null}
+      {open ? createPortal(<MobileMenu user={user} active={active} canInstall={canInstall} install={install} onClose={() => setOpen(false)} />, document.body) : null}
     </>
   );
 }
 
-function MobileLink({ href, children }: { href: string; children: React.ReactNode }) {
+// Rendered in a portal on <body>: the sticky header uses backdrop-blur, which makes it the
+// containing block for position:fixed children and would squash the drawer into the header.
+function MobileMenu({
+  user,
+  active,
+  canInstall,
+  install,
+  onClose,
+}: {
+  user: User;
+  active: (href: string) => boolean;
+  canInstall: boolean;
+  install: () => void;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   return (
-    <Link href={href} className="block rounded-xl px-3 py-2.5 text-[15px] font-medium text-ink hover:bg-slate-50">
+    <div className="fixed inset-0 z-[60] lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
+      <div className="absolute inset-0 bg-ink/50 backdrop-blur-[2px] animate-fade-in" onClick={onClose} />
+      <div className="absolute inset-y-0 right-0 flex w-[88%] max-w-sm flex-col bg-white shadow-lift animate-slide-in-right">
+        <div className="flex h-16 shrink-0 items-center justify-between border-b border-slate-100 px-5">
+          <Link href="/" onClick={onClose} aria-label="Found home">
+            <Image src="/assets/images/logo2.png" alt="Found" width={1000} height={355} className="h-8 w-auto" />
+          </Link>
+          <button className="grid size-10 place-items-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200" onClick={onClose} aria-label="Close menu">
+            <X className="size-5" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-5">
+          <Link
+            href="/apartments"
+            onClick={onClose}
+            className="mb-5 flex items-center gap-3 rounded-2xl bg-brand-50 p-4 ring-1 ring-brand-100 transition hover:bg-brand-100/70"
+          >
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-600 text-white">
+              <KeyRound className="size-5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex items-center gap-2 text-[15px] font-semibold text-ink">
+                Found Apartments <span className="rounded-full bg-coral-500 px-1.5 py-0.5 text-[10px] font-bold uppercase text-white">New</span>
+              </span>
+              <span className="block text-xs text-slate-500">Book or list verified shortlets</span>
+            </span>
+            <ChevronRight className="size-4 text-slate-400" />
+          </Link>
+
+          <p className="px-1 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Browse properties</p>
+          <div className="grid grid-cols-2 gap-2">
+            <MenuChip href="/properties" onClose={onClose} strong>
+              All properties
+            </MenuChip>
+            {PROPERTY_TYPES.map((t) => (
+              <MenuChip key={t.value} href={`/properties?type=${t.value}`} onClose={onClose}>
+                {t.plural}
+              </MenuChip>
+            ))}
+          </div>
+
+          <p className="px-1 pb-1 pt-6 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Found</p>
+          <nav className="divide-y divide-slate-100" aria-label="Mobile">
+            {[...links.filter((l) => l.href !== "/apartments"), { href: "/host", label: "Become a host" }, { href: "/agent/register", label: "Become an agent" }, { href: "/about", label: "About us" }, { href: "/contact", label: "Contact" }].map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                onClick={onClose}
+                className={clsx(
+                  "flex items-center justify-between px-1 py-3 text-[15px] font-medium transition",
+                  active(l.href) ? "text-brand-600" : "text-ink hover:text-brand-600",
+                )}
+              >
+                {l.label}
+                <ChevronRight className="size-4 text-slate-300" />
+              </Link>
+            ))}
+          </nav>
+        </div>
+
+        <div className="shrink-0 space-y-2 border-t border-slate-100 bg-white p-4 safe-bottom">
+          {canInstall ? (
+            <button onClick={install} className="btn-outline w-full">
+              <Download className="size-4" /> Install the Found app
+            </button>
+          ) : null}
+          {user ? (
+            <div className="grid grid-cols-[1fr_auto] gap-2">
+              <Link href="/dashboard" onClick={onClose} className="btn-primary w-full">
+                <LayoutDashboard className="size-4" /> Dashboard
+              </Link>
+              <a href="/logout" className="btn-ghost" aria-label="Sign out">
+                <LogOut className="size-4" />
+              </a>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              <Link href="/login" onClick={onClose} className="btn-outline w-full">
+                Sign in
+              </Link>
+              <Link href="/register" onClick={onClose} className="btn-primary w-full">
+                <Plus className="size-4" /> List property
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MenuChip({ href, children, onClose, strong }: { href: string; children: React.ReactNode; onClose: () => void; strong?: boolean }) {
+  return (
+    <Link
+      href={href}
+      onClick={onClose}
+      className={clsx(
+        "rounded-xl border px-3 py-2.5 text-sm leading-snug transition",
+        strong ? "border-ink bg-ink font-semibold text-white" : "border-slate-200 font-medium text-slate-700 hover:border-brand-300 hover:bg-brand-50/50",
+      )}
+    >
       {children}
     </Link>
   );
