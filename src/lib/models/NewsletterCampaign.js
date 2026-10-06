@@ -31,7 +31,12 @@ const newsletterCampaignSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     },
-    sentAt: Date
+    sentAt: Date,
+    // Next.js app: who has been sent this campaign (so an interrupted send can resume without
+    // duplicates) and a short lease so only one sender runs at a time.
+    sentTo: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    lockedUntil: Date,
+    lastProgressAt: Date
 }, { timestamps: true });
 
 export default mongoose.models.NewsletterCampaign || mongoose.model('NewsletterCampaign', newsletterCampaignSchema);

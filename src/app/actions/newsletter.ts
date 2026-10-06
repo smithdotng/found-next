@@ -1,12 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { marked } from "marked";
 import { connectDB } from "@/lib/db";
 import { NewsletterCampaign, User } from "@/lib/models";
 import { requireUser, isSuperAdmin } from "@/lib/session";
 import emailService from "@/lib/email";
 import { audienceQuery } from "@/lib/newsletter";
+import { deliverCampaign } from "@/lib/newsletter-send";
 
 type State = { ok: boolean; message: string } | null;
 
@@ -54,20 +56,20 @@ export async function sendNewsletter(_prev: State, fd: FormData): Promise<State>
   });
   if (!recipients.length) return { ok: false, message: "No one matches that audience, so nothing was sent" };
 
-  // Send in the background so the page returns straight away; progress shows in the history table.
-  void (async () => {
-    let delivered = 0, failed = 0;
-    for (const r of recipients) {
-      const ok = await emailService.sendNewsletterEmail(r, subject, html).catch(() => false);
-      if (ok) delivered++; else failed++;
-      if ((delivered + failed) % 20 === 0) await NewsletterCampaign.updateOne({ _id: campaign._id }, { deliveredCount: delivered, failedCount: failed });
-    }
-    await NewsletterCampaign.updateOne(
-      { _id: campaign._id },
-      { deliveredCount: delivered, failedCount: failed, status: delivered === 0 ? "failed" : "sent", sentAt: new Date() },
-    );
-  })();
+  // Send after the response (kept alive by the platform up to the page's maxDuration);
+  // anything left over is picked up by resumeNewsletter.
+  after(() => deliverCampaign(String(campaign._id)));
 
   revalidatePath("/dashboard/newsletters");
   return { ok: true, message: `Sending to ${recipients.length.toLocaleString()} recipient${recipients.length === 1 ? "" : "s"}…` };
+}
+
+/** Continues a campaign whose sending was interrupted. Never re-sends to anyone already sent. */
+export async function resumeNewsletter(id: string): Promise<State> {
+  await guard();
+  await connectDB();
+  const c = await NewsletterCampaign.findById(id).select("status");
+  if (!c || c.status !== "sending") return { ok: false, message: "This campaign isn't sending" };
+  after(() => deliverCampaign(id));
+  return { ok: true, message: "Resuming…" };
 }
