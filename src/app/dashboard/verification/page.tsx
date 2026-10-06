@@ -4,12 +4,13 @@ import clsx from "clsx";
 import { BadgeCheck, ExternalLink, ShieldCheck } from "lucide-react";
 import { requireUser } from "@/lib/session";
 import { connectDB, toPlain } from "@/lib/db";
-import { Property, User, VerificationRequest } from "@/lib/models";
+import { PreVerification, Property, User, VerificationRequest } from "@/lib/models";
 import { formatDate, formatPrice, locationLine } from "@/lib/format";
 import { mediaUrl } from "@/lib/media";
 import { VERIFICATION_PLANS, isPropertyVerified, isRealtorVerified, type VerificationPlan } from "@/lib/verification";
 import { PageHeader, EmptyState, Tabs } from "@/components/dashboard/ui";
 import { PaymentAccount } from "@/components/site/payment-account";
+import { PREVERIFY_STATUS } from "@/lib/pre-verification";
 import { ReviewButtons, VerificationRequestForm } from "@/components/dashboard/verification-forms";
 
 export const metadata: Metadata = { title: "Verification" };
@@ -54,9 +55,18 @@ async function RealtorView({ userId, sp }: { userId: string; sp: Record<string, 
   const reqs = toPlain<Req[]>(requests);
   const inReview = new Set(reqs.filter((r) => r.status === "pending").flatMap((r) => r.properties.map((p) => String(p._id))));
   const all = toPlain<{ _id: string; title: string; location: never; status: string; verification?: { verified?: boolean; until?: string } }[]>(listings);
+  const checks = await PreVerification.find({ property: { $in: all.map((l) => l._id) } }).select("property status").lean<{ property: unknown; status: string }[]>();
+  const checkOf = new Map(checks.map((c) => [String(c.property), c.status]));
   const unverified = all
     .filter((l) => !isPropertyVerified(l))
-    .map((l) => ({ _id: l._id, title: l.title, location: locationLine(l.location), status: l.status, pending: inReview.has(String(l._id)) }));
+    .map((l) => ({
+      _id: l._id,
+      title: l.title,
+      location: locationLine(l.location),
+      status: l.status,
+      pending: inReview.has(String(l._id)),
+      checklist: (checkOf.get(String(l._id)) ?? "none") as "none" | "submitted" | "needs_changes" | "accepted",
+    }));
   const verifiedCount = all.length - unverified.length;
   const annualPending = reqs.some((r) => r.plan === "annual" && r.status === "pending");
   const plan: VerificationPlan = sp.plan === "property" || sp.plan === "annual" ? sp.plan : realtorVerified ? "property" : "annual";
@@ -138,6 +148,9 @@ async function AdminView({ sp }: { sp: Record<string, string | string[] | undefi
   ]);
   const c = Object.fromEntries(counts.map((x: { _id: string; n: number }) => [x._id, x.n]));
   const reqs = toPlain<Req[]>(requests);
+  const propIds = reqs.flatMap((r) => r.properties.map((p) => p._id));
+  const checks = propIds.length ? await PreVerification.find({ property: { $in: propIds } }).select("property status").lean<{ property: unknown; status: string }[]>() : [];
+  const checkOf = new Map(checks.map((x) => [String(x.property), x.status as keyof typeof PREVERIFY_STATUS]));
 
   return (
     <>
@@ -182,8 +195,11 @@ async function AdminView({ sp }: { sp: Record<string, string | string[] | undefi
                   <p className="text-xs text-slate-500">Listings ({r.properties.length})</p>
                   <ul className="mt-1 flex flex-wrap gap-2">
                     {r.properties.map((p) => (
-                      <li key={p._id}>
+                      <li key={p._id} className="flex items-center gap-1">
                         <Link href={`/properties/${p.slug}`} target="_blank" className="chip bg-slate-100 text-slate-700 hover:bg-slate-200">{p.title}</Link>
+                        <Link href={`/dashboard/listings/${p._id}/verification`} className={clsx("chip", PREVERIFY_STATUS[checkOf.get(String(p._id)) ?? "none"].tone)}>
+                          Checklist: {PREVERIFY_STATUS[checkOf.get(String(p._id)) ?? "none"].label}
+                        </Link>
                       </li>
                     ))}
                   </ul>

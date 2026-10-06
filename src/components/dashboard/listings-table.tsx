@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import clsx from "clsx";
 import {
+  ShieldCheck,
   Check, ExternalLink, Eye, Inbox, Loader2, MoreHorizontal, Pencil, Star, Trash2, XCircle, CircleDollarSign, KeyRound, EyeOff, RotateCcw,
 } from "lucide-react";
 import { SmartImage } from "@/components/ui/smart-image";
@@ -150,6 +151,7 @@ function RowActions({ p, isAdmin }: { p: Row; isAdmin: boolean }) {
           <MenuLink href={`/${p.propertyType === "shortlet" ? "apartments" : "properties"}/${p.slug}`} icon={ExternalLink} external>View listing</MenuLink>
           <MenuLink href={`/dashboard/listings/${p._id}/edit`} icon={Pencil}>Edit details & photos</MenuLink>
           <MenuLink href={`/dashboard/inquiries?property=${p._id}`} icon={Inbox}>Enquiries ({p.leads})</MenuLink>
+          {p.propertyType !== "shortlet" ? <MenuLink href={`/dashboard/listings/${p._id}/verification`} icon={ShieldCheck}>Pre-verification checklist</MenuLink> : null}
           {isAdmin && p.status === "pending" ? (
             <>
               <Divider />

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { connectDB } from "@/lib/db";
-import { Property, User, VerificationRequest } from "@/lib/models";
+import { PreVerification, Property, User, VerificationRequest } from "@/lib/models";
 import { requireUser } from "@/lib/session";
 import { formatPrice } from "@/lib/format";
 import { saveImage, UploadError } from "@/lib/uploads";
@@ -32,6 +32,11 @@ export async function submitVerification(_prev: FormState, fd: FormData): Promis
     const owned = await Property.find({ _id: { $in: picked }, owner: session.userId, "verification.verified": { $ne: true } }).distinct("_id");
     propertyIds = owned.map(String);
     if (!propertyIds.length) errors.properties = "Select at least one of your unverified listings.";
+    // Each listing needs a submitted pre-verification checklist (title, encumbrance, documents).
+    const ready = new Set(
+      (await PreVerification.find({ property: { $in: propertyIds }, status: { $in: ["submitted", "accepted"] } }).distinct("property")).map(String),
+    );
+    if (propertyIds.some((id) => !ready.has(id))) errors.properties = "Complete the pre-verification checklist for each listing first.";
   } else if (isRealtorVerified(user.realtorProfile)) {
     return { ok: false, message: "You're already a verified realtor. You can renew closer to your expiry date." };
   }

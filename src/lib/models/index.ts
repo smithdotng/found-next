@@ -16,6 +16,7 @@ import NewsletterCampaignModel from "./NewsletterCampaign";
 import BookingModel from "./Booking";
 import BlockedDateModel from "./BlockedDate";
 import VerificationRequestModel from "./VerificationRequest";
+import PreVerificationModel from "./PreVerification";
 
 // The schemas live in plain JS (ported verbatim from the Express app);
 // these aliases give the TypeScript side a usable Model type.
@@ -35,3 +36,4 @@ export const NewsletterCampaign = NewsletterCampaignModel as Model<any>;
 export const Booking = BookingModel as Model<any>;
 export const BlockedDate = BlockedDateModel as Model<any>;
 export const VerificationRequest = VerificationRequestModel as Model<any>;
+export const PreVerification = PreVerificationModel as Model<any>;

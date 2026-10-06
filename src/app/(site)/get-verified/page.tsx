@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, BadgeCheck, Building2, Check, FileCheck2, Landmark, Send, ShieldCheck, Sparkles, TrendingUp, Zap } from "lucide-react";
+import { ArrowRight, BadgeCheck, Building2, ClipboardList, Check, FileCheck2, Landmark, Send, ShieldCheck, Sparkles, TrendingUp, Zap } from "lucide-react";
 import { pageMetadata } from "@/lib/seo";
 import { formatPrice } from "@/lib/format";
 import { VERIFICATION_PLANS } from "@/lib/verification";
@@ -26,6 +26,7 @@ export default function GetVerifiedPage() {
     { icon: Sparkles, title: "Stand out in search", text: "Verified listings are easy to spot among similar properties." },
   ];
   const steps = [
+    { icon: ClipboardList, title: "Complete the checklist", text: "For each property, tell us the type of title and any encumbrance, and upload a copy of the title document." },
     { icon: Building2, title: "Choose a plan", text: "Verify individual properties, or get verified as a realtor for the year." },
     { icon: Landmark, title: "Pay by transfer", text: "Transfer the fee to Found Projects & Realty Limited's Zenith Bank account below." },
     { icon: Send, title: "Submit your payment", text: "Tell us about your transfer from your dashboard, and attach the receipt if you have it." },
@@ -46,7 +47,7 @@ export default function GetVerifiedPage() {
     },
     {
       q: "What do you check?",
-      a: "We confirm your payment and your identity, and that you own the property or have the authority to list it. We may ask for documents or arrange an inspection.",
+      a: "Through the pre-verification checklist you tell us the type of title, whether there's any encumbrance (a mortgage, court case, government acquisition and so on) and upload a copy of the title. We review the documents, confirm your payment and identity, and that you own the property or have authority to list it. We may also check with the land registry or arrange an inspection.",
     },
     {
       q: "How long does it take?",

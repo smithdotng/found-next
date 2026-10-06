@@ -298,6 +298,10 @@ const sendAgentApprovalEmail = async (agent) => {
 // ============= INQUIRY NOTIFICATION EMAILS =============
 
 // Send inquiry notification to realtor (property owner)
+/** Public link to a listing (shortlets live under /apartments). */
+const propertyLink = (baseUrl, property) =>
+    `${baseUrl}/${property && property.propertyType === 'shortlet' ? 'apartments' : 'properties'}/${property && property.slug ? property.slug : ''}`;
+
 const sendInquiryNotificationToRealtor = async (inquiry, property, realtor) => {
     console.log(`\n📧 [Email] Sending inquiry notification to realtor: ${realtor.email}`);
     
@@ -338,7 +342,8 @@ const sendInquiryNotificationToRealtor = async (inquiry, property, realtor) => {
                         </div>
                         <div class="content">
                             <h2>Hello ${realtor.name},</h2>
-                            <p>You have received a new inquiry for your property: <strong>${property.title}</strong></p>
+                            <p>You have received a new inquiry for your property: <a href="${propertyLink(baseUrl, property)}"><strong>${property.title}</strong></a></p>
+                            <p style="font-size:13px;color:#555">Property link: <a href="${propertyLink(baseUrl, property)}">${propertyLink(baseUrl, property)}</a></p>
                             
                             <div class="inquiry-box">
                                 <h3>📝 Inquiry Details:</h3>
@@ -358,7 +363,7 @@ const sendInquiryNotificationToRealtor = async (inquiry, property, realtor) => {
                             
                             <div style="text-align: center;">
                                 <a href="${baseUrl}/dashboard/inquiries" class="btn">View All Inquiries</a>
-                                <a href="${baseUrl}/properties/${property.slug}" class="btn" style="background: #28a745;">View Property</a>
+                                <a href="${propertyLink(baseUrl, property)}" class="btn" style="background: #28a745;">View Property</a>
                             </div>
                             
                             <p><strong>Next Steps:</strong></p>
@@ -433,7 +438,8 @@ const sendInquiryNotificationToAgent = async (inquiry, property, agent) => {
                             
                             <div class="lead-box">
                                 <h3>📝 Lead Details:</h3>
-                                <p><strong>Property:</strong> ${property.title}</p>
+                                <p><strong>Property:</strong> <a href="${propertyLink(baseUrl, property)}">${property.title}</a></p>
+                                <p><strong>Link:</strong> <a href="${propertyLink(baseUrl, property)}">${propertyLink(baseUrl, property)}</a></p>
                                 <p><strong>Inquirer Name:</strong> ${inquiry.name}</p>
                                 
                                 <p><strong>Message:</strong></p>
@@ -517,7 +523,8 @@ const sendAdminInquiryNotification = async (inquiry, property) => {
                             
                             <div class="inquiry-box">
                                 <h3>📝 Inquiry Details:</h3>
-                                <p><strong>Property:</strong> ${property.title}</p>
+                                <p><strong>Property:</strong> <a href="${propertyLink(baseUrl, property)}">${property.title}</a></p>
+                                <p><strong>Link:</strong> <a href="${propertyLink(baseUrl, property)}">${propertyLink(baseUrl, property)}</a></p>
                                 <p><strong>Inquirer:</strong> ${inquiry.name}</p>
                                 <p><strong>Email:</strong> ${inquiry.email}</p>
                                 <p><strong>Phone:</strong> ${inquiry.phone || 'Not provided'}</p>
@@ -609,7 +616,7 @@ const sendInquiryReplyEmail = async (inquiry, replyMessage, repliedBy) => {
                         </div>
                         <div class="content">
                             <h2>Hello ${inquiry.name},</h2>
-                            <p>Thank you for your inquiry about <strong>${inquiry.propertyTitle}</strong>. We have received a response from our team.</p>
+                            <p>Thank you for your inquiry about <a href="${propertyUrl}"><strong>${inquiry.propertyTitle}</strong></a>. We have received a response from our team.</p>
                             
                             <div class="reply-box">
                                 <h3>📝 Response:</h3>

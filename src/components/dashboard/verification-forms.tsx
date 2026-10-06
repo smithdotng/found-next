@@ -5,16 +5,17 @@ import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { BadgeCheck, Building2, Check, Loader2, X } from "lucide-react";
 import { reviewVerification, submitVerification } from "@/app/actions/verification";
-import { FormMessage, SubmitButton, TextField } from "@/components/ui/form-bits";
+import { FormMessage, TextField } from "@/components/ui/form-bits";
 import { toast } from "@/components/ui/toaster";
 import { formatPrice } from "@/lib/format";
 import { VERIFICATION_PLANS, type VerificationPlan } from "@/lib/verification";
 import type { FormState } from "@/app/actions/public";
 
-type Listing = { _id: string; title: string; location: string; status: string; pending: boolean };
+type Listing = { _id: string; title: string; location: string; status: string; pending: boolean; checklist: "none" | "submitted" | "needs_changes" | "accepted" };
 
 export function VerificationRequestForm({ listings, defaultPlan, annualBlocked }: { listings: Listing[]; defaultPlan: VerificationPlan; annualBlocked?: string }) {
-  const [state, action] = useActionState<FormState, FormData>(submitVerification, null);
+  const [state, action, isPending] = useActionState<FormState, FormData>(submitVerification, null);
+  const [, startSubmit] = useTransition();
   const [plan, setPlan] = useState<VerificationPlan>(annualBlocked && defaultPlan === "annual" ? "property" : defaultPlan);
   const [picked, setPicked] = useState<string[]>([]);
   const e = (k: string) => state?.errors?.[k];
@@ -34,7 +35,14 @@ export function VerificationRequestForm({ listings, defaultPlan, annualBlocked }
   }
 
   return (
-    <form action={action} className="card space-y-6 p-5 sm:p-6">
+    <form
+      className="card space-y-6 p-5 sm:p-6"
+      onSubmit={(ev) => {
+        ev.preventDefault();
+        const fd = new FormData(ev.currentTarget);
+        startSubmit(() => action(fd));
+      }}
+    >
       <div>
         <p className="field-label">1. Choose a plan</p>
         <div className="mt-1 grid gap-3 sm:grid-cols-2">
@@ -65,25 +73,36 @@ export function VerificationRequestForm({ listings, defaultPlan, annualBlocked }
       {plan === "property" ? (
         <div>
           <p className="field-label">2. Choose the listings to verify</p>
+          <p className="-mt-1 mb-2 text-xs text-slate-500">Each listing needs a completed pre-verification checklist (title, encumbrances and a copy of the title).</p>
           {listings.length ? (
             <div className="mt-1 max-h-72 divide-y divide-slate-100 overflow-y-auto rounded-2xl border border-slate-200">
-              {listings.map((l) => (
-                <label key={l._id} className={clsx("flex cursor-pointer items-center gap-3 px-4 py-3 text-sm", l.pending && "cursor-not-allowed opacity-50")}>
+              {listings.map((l) => {
+                const ready = l.checklist === "submitted" || l.checklist === "accepted";
+                return (
+                <label key={l._id} className={clsx("flex cursor-pointer items-center gap-3 px-4 py-3 text-sm", (l.pending || !ready) && "cursor-not-allowed")}>
                   <input
                     type="checkbox"
                     name="properties"
                     value={l._id}
-                    disabled={l.pending}
+                    disabled={l.pending || !ready}
                     checked={picked.includes(l._id)}
                     onChange={(ev) => setPicked((cur) => (ev.target.checked ? [...cur, l._id] : cur.filter((x) => x !== l._id)))}
                     className="size-4 accent-brand-600"
                   />
-                  <span className="min-w-0 flex-1">
+                  <span className={clsx("min-w-0 flex-1", (l.pending || !ready) && "opacity-60")}>
                     <span className="block truncate font-medium text-ink">{l.title}</span>
                     <span className="block truncate text-xs text-slate-500">{l.pending ? "Awaiting review in another request" : l.location}</span>
                   </span>
+                  {ready ? (
+                    <span className="chip shrink-0 bg-emerald-50 text-emerald-700">Checklist done</span>
+                  ) : (
+                    <a href={`/dashboard/listings/${l._id}/verification`} className="chip shrink-0 bg-amber-50 text-amber-800 hover:bg-amber-100">
+                      {l.checklist === "needs_changes" ? "Update checklist" : "Complete checklist"}
+                    </a>
+                  )}
                 </label>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="mt-1 flex items-center gap-2 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
@@ -114,7 +133,10 @@ export function VerificationRequestForm({ listings, defaultPlan, annualBlocked }
       </div>
 
       <FormMessage state={state} />
-      <SubmitButton pendingText="Submitting…">I&apos;ve paid, submit for verification</SubmitButton>
+      <button type="submit" className="btn-primary w-full py-3" disabled={isPending}>
+        {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+        {isPending ? "Submitting…" : "I've paid, submit for verification"}
+      </button>
     </form>
   );
 }

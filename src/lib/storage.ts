@@ -1,5 +1,5 @@
 import "server-only";
-import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 /**
  * Object storage for uploads — Cloudflare R2 (or any S3-compatible bucket).
@@ -55,5 +55,33 @@ export async function deleteObject(publicPath: string) {
     await c.send(new DeleteObjectCommand({ Bucket: process.env.S3_BUCKET, Key: keyFor(publicPath) }));
   } catch (e) {
     console.error("[storage] delete failed", publicPath, e instanceof Error ? e.message : e);
+  }
+}
+
+/** Stores a private object (no public caching). Pass the raw key, e.g. "private/docs/<uuid>.pdf". */
+export async function putPrivateObject(key: string, body: Uint8Array, contentType: string) {
+  const c = s3();
+  if (!c) throw new Error("Object storage is not configured");
+  await c.send(new PutObjectCommand({ Bucket: process.env.S3_BUCKET, Key: key, Body: body, ContentType: contentType, CacheControl: "private, no-store" }));
+}
+
+export async function getObjectBytes(key: string) {
+  const c = s3();
+  if (!c) return null;
+  try {
+    const res = await c.send(new GetObjectCommand({ Bucket: process.env.S3_BUCKET, Key: key }));
+    return res.Body ? new Uint8Array(await res.Body.transformToByteArray()) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteKey(key: string) {
+  const c = s3();
+  if (!c) return;
+  try {
+    await c.send(new DeleteObjectCommand({ Bucket: process.env.S3_BUCKET, Key: key }));
+  } catch (e) {
+    console.error("[storage] delete failed", key, e instanceof Error ? e.message : e);
   }
 }

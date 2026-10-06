@@ -41,3 +41,6 @@ yarn-error.log*
 next-env.d.ts
 
 !.env.example
+
+# private documents when object storage is off (local dev)
+/private-uploads
