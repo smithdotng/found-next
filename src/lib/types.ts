@@ -90,7 +90,9 @@ export interface InquiryDoc {
   phone: string;
   message: string;
   realtor?: { id?: string; name?: string; email?: string };
-  agent?: { id?: string; name?: string; email?: string };
+  agent?: { id?: string; name?: string; email?: string; phone?: string };
+  /** Agent-referred enquiry seen by the realtor: the enquirer's contact details are withheld and Found handles correspondence. */
+  viaFound?: boolean;
   read: boolean;
   replied: boolean;
   replyMessage?: string;

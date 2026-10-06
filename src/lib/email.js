@@ -347,6 +347,14 @@ const sendInquiryNotificationToRealtor = async (inquiry, property, realtor) => {
                                 <p><strong>Message:</strong></p>
                                 <p>${inquiry.message.replace(/\n/g, '<br>')}</p>
                             </div>
+                            ${inquiry.agent && inquiry.agent.name ? `
+                            <div class="inquiry-box">
+                                <h3>🤝 Referred by a Found agent</h3>
+                                <p><strong>Agent:</strong> ${inquiry.agent.name}</p>
+                                <p><strong>Email:</strong> ${inquiry.agent.email || 'Not provided'}</p>
+                                <p><strong>Phone:</strong> ${inquiry.agent.phone || 'Not provided'}</p>
+                                <p>Because this enquiry came through an agent's link, Found handles all correspondence with the enquirer. Please contact Found at <a href="mailto:admin@found.ng">admin@found.ng</a> to arrange inspections and follow this transaction.</p>
+                            </div>` : ''}
                             
                             <div style="text-align: center;">
                                 <a href="${baseUrl}/dashboard/inquiries" class="btn">View All Inquiries</a>
@@ -438,7 +446,8 @@ const sendInquiryNotificationToAgent = async (inquiry, property, agent) => {
                             
                             <p><strong>What happens next?</strong></p>
                             <ul>
-                                <li>The realtor (property owner) will respond to the inquiry</li>
+                                <li>This transaction is now <strong>locked to you</strong>. Found handles all correspondence with the enquirer and the realtor.</li>
+                                <li>Contact Found at <a href="mailto:admin@found.ng">admin@found.ng</a> to track the progress of this deal</li>
                                 <li>If a transaction occurs, you earn <strong>70% commission</strong></li>
                                 <li>Track all your leads in your agent dashboard</li>
                             </ul>
@@ -515,6 +524,22 @@ const sendAdminInquiryNotification = async (inquiry, property) => {
                                 <p><strong>Message:</strong></p>
                                 <p>${inquiry.message.replace(/\n/g, '<br>')}</p>
                             </div>
+                            ${inquiry.realtor && inquiry.realtor.name ? `
+                            <div class="inquiry-box">
+                                <h3>🏢 Listing Realtor:</h3>
+                                <p><strong>Name:</strong> ${inquiry.realtor.company ? `${inquiry.realtor.company} (${inquiry.realtor.name})` : inquiry.realtor.name}</p>
+                                <p><strong>Email:</strong> ${inquiry.realtor.email || 'Not provided'}</p>
+                                <p><strong>Phone:</strong> ${inquiry.realtor.phone || 'Not provided'}</p>
+                            </div>` : ''}
+                            ${inquiry.agent && inquiry.agent.name ? `
+                            <div class="inquiry-box" style="border-left-color:#e05a63">
+                                <h3>🤝 Agent-referred: this transaction is locked to the agent</h3>
+                                <p><strong>Agent:</strong> ${inquiry.agent.name}</p>
+                                <p><strong>Email:</strong> ${inquiry.agent.email || 'Not provided'}</p>
+                                <p><strong>Phone:</strong> ${inquiry.agent.phone || 'Not provided'}</p>
+                                <p><strong>Referral code:</strong> ${inquiry.agent.referralCode || '—'}</p>
+                                <p>The realtor and the agent have <strong>not</strong> been given the enquirer's contact details. Found handles all correspondence.</p>
+                            </div>` : ''}
                             
                             <div style="text-align: center;">
                                 <a href="${baseUrl}/dashboard/inquiries" class="btn">View Inquiry in Admin Panel</a>

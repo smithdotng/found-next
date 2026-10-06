@@ -158,6 +158,23 @@ function Detail({
           {q.agent?.name ? <p className="mt-1 text-xs text-slate-500">Referred by agent {q.agent.name}</p> : null}
         </div>
 
+        {q.viaFound ? (
+          <div className="space-y-3 rounded-2xl border border-brand-100 bg-brand-50/60 p-4 text-sm">
+            <p className="font-semibold text-ink">Agent-referred enquiry</p>
+            <p className="text-slate-600">
+              This enquiry came through an agent&apos;s link, so Found handles all correspondence with {first}. Contact Found to arrange inspections and follow the deal.
+            </p>
+            <dl className="grid gap-3 sm:grid-cols-2">
+              <div><dt className="text-xs text-slate-500">Referring agent</dt><dd className="font-medium text-ink">{q.agent?.name}</dd></div>
+              <div><dt className="text-xs text-slate-500">Agent phone</dt><dd className="font-medium text-ink">{q.agent?.phone ? <a href={`tel:${q.agent.phone}`} className="hover:underline">{q.agent.phone}</a> : "—"}</dd></div>
+              <div className="sm:col-span-2"><dt className="text-xs text-slate-500">Agent email</dt><dd className="break-all font-medium text-ink">{q.agent?.email || "—"}</dd></div>
+            </dl>
+            <a href={`mailto:admin@found.ng?subject=${encodeURIComponent(`Agent-referred enquiry: ${prop?.title ?? q.propertyTitle} (${q.name})`)}`} className="btn-primary btn-sm">
+              <Mail className="size-3.5" /> Contact Found admin
+            </a>
+          </div>
+        ) : (
+          <>
         <div className="grid gap-2 sm:grid-cols-3">
           {q.phone ? (
             <a href={`tel:${q.phone}`} className="btn-outline"><Phone className="size-4" /> Call</a>
@@ -173,6 +190,8 @@ function Detail({
           <div><dt className="text-xs text-slate-500">Email</dt><dd className="break-all font-medium text-ink">{q.email}</dd></div>
           <div><dt className="text-xs text-slate-500">Phone</dt><dd className="font-medium text-ink">{q.phone || "—"}</dd></div>
         </dl>
+          </>
+        )}
 
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Message</p>
@@ -187,6 +206,7 @@ function Detail({
         ) : null}
       </div>
 
+      {q.viaFound ? null : (
       <form
         className="border-t border-slate-100 p-4"
         onSubmit={(e) => {
@@ -203,6 +223,7 @@ function Detail({
           </button>
         </div>
       </form>
+      )}
     </div>
   );
 }

@@ -40,7 +40,8 @@ export async function sendPropertyInquiry(_prev: FormState, fd: FormData): Promi
 
     const session = await getSession();
     let agentInfo = null;
-    if (session.referringAgent) {
+    // Agent referral links lock the enquiry to that agent, but only for the property they promoted.
+    if (session.referringAgent && session.referringAgent.propertyId === String(propertyId)) {
       const agent = await User.findById(session.referringAgent.id).select("name email phone agentProfile");
       if (agent) {
         agentInfo = { id: agent._id, name: agent.name, email: agent.email, phone: agent.phone, referralCode: session.referringAgent.referralCode };

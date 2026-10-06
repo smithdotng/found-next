@@ -226,5 +226,12 @@ export async function getManagedInquiries(session: AuthedSession, f: { filter?: 
     Inquiry.find(query).sort("-createdAt").skip((page - 1) * perPage).limit(perPage).populate("property", "title slug images").lean(),
     Inquiry.countDocuments(query),
   ]);
-  return { items: toPlain<InquiryDoc[]>(items), total, page, totalPages: Math.max(1, Math.ceil(total / perPage)) };
+  const plain = toPlain<InquiryDoc[]>(items);
+  // Agent-referred enquiries: the realtor sees the enquirer's name and the agent's contact
+  // details, never the enquirer's email or phone. Found's admin handles the correspondence.
+  const visible =
+    session.userType === "admin"
+      ? plain
+      : plain.map((q) => (q.agent?.name ? { ...q, email: "", phone: "", viaFound: true } : q));
+  return { items: visible, total, page, totalPages: Math.max(1, Math.ceil(total / perPage)) };
 }

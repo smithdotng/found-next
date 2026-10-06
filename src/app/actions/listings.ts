@@ -325,6 +325,9 @@ export async function replyInquiry(id: string, message: string) {
   await connectDB();
   const inquiry = await loadInquiry(session, id);
   if (!inquiry) return { ok: false, message: "Not found" };
+  if (session.userType !== "admin" && inquiry.agent?.name) {
+    return { ok: false, message: "This enquiry came through an agent, so Found handles the correspondence. Contact admin@found.ng." };
+  }
   inquiry.replied = true;
   inquiry.read = true;
   inquiry.replyMessage = message.trim();
