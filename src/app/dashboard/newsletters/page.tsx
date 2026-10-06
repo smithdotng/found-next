@@ -6,7 +6,7 @@ import { NewsletterCampaign, User } from "@/lib/models";
 import { AUDIENCES, audienceQuery } from "@/lib/newsletter";
 import { PageHeader, EmptyState } from "@/components/dashboard/ui";
 import { NewsletterComposer } from "@/components/dashboard/newsletter-composer";
-import { CampaignWatcher } from "@/components/dashboard/campaign-watcher";
+import { CampaignWatcher, RetryFailedButton } from "@/components/dashboard/campaign-watcher";
 import { formatDate } from "@/lib/format";
 
 export const metadata = { title: "Newsletters" };
@@ -27,7 +27,7 @@ export default async function NewslettersPage() {
   if (!isSuperAdmin(session)) redirect("/dashboard?notice=Only+the+super+admin+can+send+newsletters");
   await connectDB();
   const [campaigns, ...counts] = await Promise.all([
-    NewsletterCampaign.find().select("-content -sentTo").sort("-createdAt").limit(50).lean(),
+    NewsletterCampaign.find().select("-content -sentTo -failedTo").sort("-createdAt").limit(50).lean(),
     ...AUDIENCES.map((a) => User.countDocuments(audienceQuery(a.value))),
   ]);
   const countMap = Object.fromEntries(AUDIENCES.map((a, i) => [a.value, counts[i] as number]));
@@ -54,6 +54,7 @@ export default async function NewslettersPage() {
                   <td className="px-4 py-3 text-right tabular-nums text-slate-700">
                     {c.deliveredCount.toLocaleString()} / {c.recipientCount.toLocaleString()}
                     {c.failedCount ? <span className="ml-1 text-xs text-rose-600">({c.failedCount} failed)</span> : null}
+                    {c.failedCount && c.status !== "sending" ? <RetryFailedButton id={c._id} count={c.failedCount} /> : null}
                   </td>
                   <td className="px-4 py-3 text-slate-500">{formatDate(c.sentAt || c.createdAt)}</td>
                 </tr>

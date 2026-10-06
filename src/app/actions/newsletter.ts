@@ -8,7 +8,7 @@ import { NewsletterCampaign, User } from "@/lib/models";
 import { requireUser, isSuperAdmin } from "@/lib/session";
 import emailService from "@/lib/email";
 import { audienceQuery } from "@/lib/newsletter";
-import { deliverCampaign } from "@/lib/newsletter-send";
+import { deliverCampaign, requeueFailed } from "@/lib/newsletter-send";
 
 type State = { ok: boolean; message: string } | null;
 
@@ -72,4 +72,14 @@ export async function resumeNewsletter(id: string): Promise<State> {
   if (!c || c.status !== "sending") return { ok: false, message: "This campaign isn't sending" };
   after(() => deliverCampaign(id));
   return { ok: true, message: "Resuming…" };
+}
+
+/** Resends a finished campaign to the recipients it failed to reach. */
+export async function retryFailedNewsletter(id: string): Promise<State> {
+  await guard();
+  const n = await requeueFailed(id);
+  if (!n) return { ok: false, message: "No failed recipients to retry" };
+  after(() => deliverCampaign(id));
+  revalidatePath("/dashboard/newsletters");
+  return { ok: true, message: `Retrying ${n} recipient${n === 1 ? "" : "s"}…` };
 }

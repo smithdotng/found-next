@@ -8,6 +8,9 @@ import emailService from "./email";
 /** How long one run may send before handing over (keep under the page's maxDuration). */
 const BUDGET_MS = 45_000;
 const LEASE_MS = 20_000;
+/** Gap between emails so the SMTP provider doesn't start refusing (Hostinger rate-limits bursts). */
+const GAP_MS = 1_200;
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /**
  * Sends a campaign to everyone in its audience who hasn't had it yet. Safe to call repeatedly:
@@ -45,8 +48,13 @@ export async function deliverCampaign(campaignId: string) {
     const ok = await emailService.sendNewsletterEmail(r, campaign.subject, campaign.content).catch(() => false);
     await NewsletterCampaign.updateOne(
       { _id: campaignId },
-      { $addToSet: { sentTo: r._id }, $inc: ok ? { deliveredCount: 1 } : { failedCount: 1 }, $set: { lockedUntil: lease(), lastProgressAt: new Date() } },
+      {
+        $addToSet: ok ? { sentTo: r._id } : { sentTo: r._id, failedTo: r._id },
+        $inc: ok ? { deliveredCount: 1 } : { failedCount: 1 },
+        $set: { lockedUntil: lease(), lastProgressAt: new Date() },
+      },
     );
+    await sleep(GAP_MS);
   }
 
   const final = await NewsletterCampaign.findById(campaignId).select("deliveredCount");
@@ -55,4 +63,22 @@ export async function deliverCampaign(campaignId: string) {
     { $set: { status: (final?.deliveredCount ?? 0) === 0 ? "failed" : "sent", sentAt: new Date(), lockedUntil: null, recipientCount: recipients.length } },
   );
   return "done";
+}
+
+/**
+ * Puts a campaign's failed recipients back in the queue and resends to just them.
+ * Campaigns sent before failures were tracked assume the failures were the last ones
+ * attempted (sentTo keeps send order), which is how SMTP rate-limiting shows up.
+ */
+export async function requeueFailed(campaignId: string) {
+  await connectDB();
+  const c = await NewsletterCampaign.findById(campaignId).select("sentTo failedTo failedCount status");
+  if (!c || !c.failedCount) return 0;
+  const failed: Types.ObjectId[] = c.failedTo?.length ? c.failedTo : (c.sentTo ?? []).slice(-c.failedCount);
+  if (!failed.length) return 0;
+  await NewsletterCampaign.updateOne(
+    { _id: campaignId },
+    { $pull: { sentTo: { $in: failed } }, $set: { failedTo: [], status: "sending", lockedUntil: null }, $inc: { failedCount: -failed.length } },
+  );
+  return failed.length;
 }
