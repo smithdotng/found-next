@@ -56,11 +56,14 @@ interface PageSeo {
  * The share image for a page. User uploads (listing, blog and project photos) go through
  * /og/uploads/..., which serves a 1200x630 JPEG from our own domain; site assets are used as-is.
  */
+const OG_VERSION = 2;
+
 export function ogImageUrl(src?: string | null) {
   const img = src || DEFAULT_OG_IMAGE;
   const uploads = img.match(/\/uploads\/(?:properties\/)?(.+)$/);
   const isUpload = img.startsWith("/uploads/") || Boolean(MEDIA_BASE_URL && img.startsWith(MEDIA_BASE_URL + "/uploads/"));
-  if (isUpload && uploads) return `${siteUrl()}/og/uploads/${uploads[1]}`;
+  // Bump OG_VERSION whenever /og rendering changes: the images are cached long-term by URL.
+  if (isUpload && uploads) return `${siteUrl()}/og/uploads/${uploads[1]}?v=${OG_VERSION}`;
   return absoluteUrl(img);
 }
 
