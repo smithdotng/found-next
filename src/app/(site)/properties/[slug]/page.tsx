@@ -3,9 +3,10 @@ import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { after } from "next/server";
 import {
-  Bath, BedDouble, Car, Check, ChevronRight, Clock, Eye, MapPin, Ruler, ShieldCheck, Sofa, Toilet, Users, Zap, Droplets, Sparkles, Phone, Pencil,
+  BadgeCheck, Bath, BedDouble, Car, Check, ChevronRight, Clock, Eye, MapPin, Ruler, ShieldCheck, Sofa, Toilet, Users, Zap, Droplets, Sparkles, Phone, Pencil,
 } from "lucide-react";
 import { getPublicProperty, getSimilarProperties } from "@/lib/queries";
+import { isPropertyVerified, isRealtorVerified } from "@/lib/verification";
 import { connectDB } from "@/lib/db";
 import { Property } from "@/lib/models";
 import { getSession } from "@/lib/session";
@@ -136,6 +137,11 @@ export default async function PropertyPage({ params }: PageProps<"/properties/[s
             <span className="chip bg-brand-50 text-brand-700 ring-brand-600/15">{typeLabel(p.propertyType)}</span>
             <span className="chip bg-slate-50 text-slate-700 ring-slate-500/15">{txLabel(p.transactionType)}</span>
             {p.priceNegotiable ? <span className="chip bg-emerald-50 text-emerald-700 ring-emerald-600/15">Negotiable</span> : null}
+            {isPropertyVerified(p) ? (
+              <Link href="/get-verified" className="chip bg-emerald-600 text-white ring-emerald-700/20" title="This listing has been verified by Found">
+                <BadgeCheck className="size-3.5" /> Verified by Found
+              </Link>
+            ) : null}
           </div>
           <h1 className="mt-3 text-2xl font-bold leading-tight tracking-tight text-ink sm:text-3xl">{p.title}</h1>
           <p className="mt-2 flex items-start gap-1.5 text-slate-600">
@@ -269,7 +275,7 @@ export default async function PropertyPage({ params }: PageProps<"/properties/[s
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-ink">{owner?.realtorProfile?.company || owner?.name || "Found Properties"}</p>
                 <p className="flex items-center gap-1 text-xs text-slate-500">
-                  {owner?.realtorProfile?.verified ? (
+                  {isRealtorVerified(owner?.realtorProfile) ? (
                     <><ShieldCheck className="size-3.5 text-emerald-600" /> Verified realtor</>
                   ) : (
                     "Listed on Found"

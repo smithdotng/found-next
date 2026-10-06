@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { BedDouble, Bath, MapPin, Ruler, Car, Eye } from "lucide-react";
+import { BedDouble, Bath, MapPin, Ruler, Car, Eye, BadgeCheck } from "lucide-react";
+import { isPropertyVerified } from "@/lib/verification";
 import { SmartImage } from "@/components/ui/smart-image";
 import { SaveButton } from "./save-button";
 import { formatPrice, locationLine, primaryImage, priceSuffix, txLabel, typeLabel } from "@/lib/format";
@@ -30,6 +31,11 @@ export function PropertyCard({ p, priority = false }: { p: PropertyDoc; priority
             <span className="rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-ink shadow-sm">{txLabel(p.transactionType)}</span>
             {p.featured || p.listingTier === "premium" ? (
               <span className="rounded-full bg-coral-500 px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm">Featured</span>
+            ) : null}
+            {isPropertyVerified(p) ? (
+              <span className="flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm">
+                <BadgeCheck className="size-3.5" /> Verified
+              </span>
             ) : null}
           </div>
           <div className="relative z-10">

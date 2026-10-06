@@ -28,14 +28,15 @@ export function uploadRoot() {
 
 export class UploadError extends Error {}
 
-type Kind = "property" | "profile" | "blog" | "project";
+type Kind = "property" | "profile" | "blog" | "project" | "receipt";
 
-const SUBDIR: Record<Kind, string> = { property: "", profile: "profiles", blog: "blogs", project: "" };
+const SUBDIR: Record<Kind, string> = { property: "", profile: "profiles", blog: "blogs", project: "", receipt: "receipts" };
 const MAX_BYTES: Record<Kind, number> = {
   property: 5 * 1024 * 1024,
   profile: 2 * 1024 * 1024,
   blog: 5 * 1024 * 1024,
   project: 5 * 1024 * 1024,
+  receipt: 5 * 1024 * 1024,
 };
 
 /**

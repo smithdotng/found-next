@@ -7,13 +7,13 @@ import { useState } from "react";
 import clsx from "clsx";
 import {
   LayoutDashboard, Building2, PlusCircle, Inbox, UserCircle, LogOut, Menu, X, ClipboardCheck, Users, Newspaper, Star, Landmark,
-  Megaphone, Search, Wallet, ExternalLink, Download, Receipt, Mail, CalendarCheck, CalendarDays, FileSignature, KeyRound,
+  Megaphone, Search, Wallet, ExternalLink, Download, Receipt, Mail, CalendarCheck, CalendarDays, FileSignature, KeyRound, BadgeCheck,
 } from "lucide-react";
 import { usePwa } from "@/components/pwa/pwa-provider";
 
 type NavItem = { href: string; label: string; icon: typeof Inbox; badge?: number; exact?: boolean };
 type User = { name: string; email: string; type: "realtor" | "agent" | "admin" | "host"; superAdmin: boolean };
-type Counts = { approvals: number; inquiries: number; bookings: number; hosts: number };
+type Counts = { approvals: number; inquiries: number; bookings: number; hosts: number; verifications: number };
 
 function navFor(user: User, counts: Counts): { title?: string; items: NavItem[] }[] {
   if (user.type === "host") {
@@ -60,6 +60,7 @@ function navFor(user: User, counts: Counts): { title?: string; items: NavItem[] 
           { href: "/dashboard/listings/new", label: "Add listing", icon: PlusCircle, exact: true },
           { href: "/dashboard/inquiries", label: "Enquiries", icon: Inbox, badge: counts.inquiries },
           { href: "/dashboard/users", label: "Users", icon: Users },
+          { href: "/dashboard/verification", label: "Verifications", icon: BadgeCheck, badge: counts.verifications },
         ],
       },
       {
@@ -93,7 +94,13 @@ function navFor(user: User, counts: Counts): { title?: string; items: NavItem[] 
         { href: "/dashboard/bookings", label: "Shortlet bookings", icon: CalendarCheck, badge: counts.bookings },
       ],
     },
-    { title: "Account", items: [{ href: "/dashboard/profile", label: "Profile & settings", icon: UserCircle }] },
+    {
+      title: "Account",
+      items: [
+        { href: "/dashboard/verification", label: "Get verified", icon: BadgeCheck },
+        { href: "/dashboard/profile", label: "Profile & settings", icon: UserCircle },
+      ],
+    },
   ];
 }
 

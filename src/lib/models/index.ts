@@ -15,6 +15,7 @@ import FavoriteModel from "./Favorite";
 import NewsletterCampaignModel from "./NewsletterCampaign";
 import BookingModel from "./Booking";
 import BlockedDateModel from "./BlockedDate";
+import VerificationRequestModel from "./VerificationRequest";
 
 // The schemas live in plain JS (ported verbatim from the Express app);
 // these aliases give the TypeScript side a usable Model type.
@@ -33,3 +34,4 @@ export const Favorite = FavoriteModel as Model<any>;
 export const NewsletterCampaign = NewsletterCampaignModel as Model<any>;
 export const Booking = BookingModel as Model<any>;
 export const BlockedDate = BlockedDateModel as Model<any>;
+export const VerificationRequest = VerificationRequestModel as Model<any>;

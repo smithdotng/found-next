@@ -1,7 +1,7 @@
 import "server-only";
 import { Types } from "mongoose";
 import { connectDB, toPlain } from "./db";
-import { Inquiry, Project, ProjectInquiry, Promotion, Property, User, Blog, Booking } from "./models";
+import { Inquiry, Project, ProjectInquiry, Promotion, Property, User, Blog, Booking, VerificationRequest } from "./models";
 import { escapeRegex } from "./format";
 import type { AuthedSession } from "./session";
 import type { InquiryDoc, PropertyDoc } from "./types";
@@ -17,8 +17,12 @@ export async function getNavCounts(session: AuthedSession) {
       Inquiry.countDocuments({ read: false }),
       ProjectInquiry.countDocuments({ status: "new" }),
     ]);
-    const [bookings, hosts] = await Promise.all([Booking.countDocuments({ status: "pending" }), User.countDocuments({ userType: "host", "hostProfile.status": "pending" })]);
-    return { approvals: pending, inquiries: unread + projectNew, bookings, hosts };
+    const [bookings, hosts, verifications] = await Promise.all([
+      Booking.countDocuments({ status: "pending" }),
+      User.countDocuments({ userType: "host", "hostProfile.status": "pending" }),
+      VerificationRequest.countDocuments({ status: "pending" }),
+    ]);
+    return { approvals: pending, inquiries: unread + projectNew, bookings, hosts, verifications };
   }
   if (session.userType === "realtor" || session.userType === "host") {
     const ids = await Property.find({ owner: session.userId }).distinct("_id");
@@ -26,9 +30,9 @@ export async function getNavCounts(session: AuthedSession) {
       Inquiry.countDocuments({ property: { $in: ids }, read: false }),
       Booking.countDocuments({ property: { $in: ids }, status: "pending" }),
     ]);
-    return { approvals: 0, inquiries: unread, bookings, hosts: 0 };
+    return { approvals: 0, inquiries: unread, bookings, hosts: 0, verifications: 0 };
   }
-  return { approvals: 0, inquiries: 0, bookings: 0, hosts: 0 };
+  return { approvals: 0, inquiries: 0, bookings: 0, hosts: 0, verifications: 0 };
 }
 
 export async function getRealtorOverview(userId: string) {

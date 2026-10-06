@@ -1,5 +1,7 @@
 "use server";
 
+import { isRealtorVerified } from "@/lib/verification";
+
 import slugify from "slugify";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -155,8 +157,14 @@ export async function createListing(_prev: FormState, fd: FormData): Promise<For
   } catch (e) {
     return { ok: false, message: e instanceof UploadError ? e.message : "Couldn't save your photos. Please try again." };
   }
+  // Listings by a realtor with active annual verification are verified automatically.
+  const ownerDoc = session.userType === "realtor" ? await User.findById(session.userId).select("realtorProfile").lean<{ realtorProfile?: { verified?: boolean; verifiedUntil?: Date } }>() : null;
+  const verification = isRealtorVerified(ownerDoc?.realtorProfile)
+    ? { verified: true, via: "realtor", verifiedAt: new Date(), until: ownerDoc?.realtorProfile?.verifiedUntil ?? null }
+    : undefined;
   const property = await Property.create({
     ...data,
+    ...(verification ? { verification } : {}),
     slug: await uniqueSlug(String(data.title)),
     images,
     owner: session.userId,

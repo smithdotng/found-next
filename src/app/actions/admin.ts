@@ -5,13 +5,21 @@ import { connectDB } from "@/lib/db";
 import { Property, User, Withdrawal, Promotion } from "@/lib/models";
 import { requireUser, isSuperAdmin } from "@/lib/session";
 import emailService from "@/lib/email";
+import { oneYearFrom } from "@/lib/verification";
+import { applyRealtorBadge } from "@/lib/verification-server";
 
 type Result = { ok: boolean; message: string };
 
 export async function setUserVerified(id: string, verified: boolean): Promise<Result> {
   await requireUser(["admin"]);
   await connectDB();
-  await User.updateOne({ _id: id, userType: "realtor" }, { $set: { "realtorProfile.verified": verified } });
+  // Manual verify from the Users table = one year of realtor verification (same as the paid annual plan).
+  const until = verified ? oneYearFrom() : null;
+  const r = await User.updateOne(
+    { _id: id, userType: "realtor" },
+    verified ? { $set: { "realtorProfile.verified": true, "realtorProfile.verifiedUntil": until } } : { $set: { "realtorProfile.verified": false }, $unset: { "realtorProfile.verifiedUntil": "" } },
+  );
+  if (r.matchedCount) await applyRealtorBadge(id, until);
   revalidatePath("/dashboard/users");
   return { ok: true, message: verified ? "Realtor verified" : "Verification removed" };
 }

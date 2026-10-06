@@ -48,7 +48,9 @@ const userSchema = new mongoose.Schema({
         verified: {
             type: Boolean,
             default: false
-        }
+        },
+        // Annual realtor verification expiry (Next.js app). Empty = verified before plans existed.
+        verifiedUntil: Date
     },
     // Found Apartments host (shortlet owner/operator). Added by the Next.js app.
     hostProfile: {

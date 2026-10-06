@@ -36,6 +36,8 @@ export function apartmentEmail(opts: {
   rows?: [string, string][];
   note?: string;
   cta?: { label: string; href: string };
+  /** Header wordmark; defaults to "Found Apartments". */
+  brand?: "apartments" | "found";
 }) {
   const base = siteUrl();
   const rows = (opts.rows ?? [])
@@ -45,7 +47,7 @@ export function apartmentEmail(opts: {
   return `<!doctype html><html><body style="margin:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:24px 12px"><tr><td align="center">
   <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#fff;border-radius:14px;overflow:hidden">
-    <tr><td style="background:#12334a;padding:20px 28px;color:#fff;font-size:18px;font-weight:700">Found <span style="color:#f2a0a5">Apartments</span></td></tr>
+    <tr><td style="background:#12334a;padding:20px 28px;color:#fff;font-size:18px;font-weight:700">${opts.brand === "found" ? `Found <span style="color:#f2a0a5">Projects &amp; Realty</span>` : `Found <span style="color:#f2a0a5">Apartments</span>`}</td></tr>
     <tr><td style="padding:28px">
       <h1 style="margin:0 0 10px;font-size:20px;color:#0f172a">${esc(opts.heading)}</h1>
       <p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#334155">${esc(opts.intro)}</p>
@@ -58,14 +60,14 @@ export function apartmentEmail(opts: {
 }
 
 /** Sends an email; never throws. Returns false when SMTP isn't configured or sending fails. */
-export async function sendMail(to: string, subject: string, html: string) {
+export async function sendMail(to: string, subject: string, html: string, fromName = "Found Apartments") {
   const t = transporter();
   if (!t) {
     console.warn(`[mail] SMTP not configured — skipped "${subject}" to ${to}`);
     return false;
   }
   try {
-    await t.sendMail({ from: `"Found Apartments" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`, to, subject, html });
+    await t.sendMail({ from: `"${fromName}" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`, to, subject, html });
     return true;
   } catch (e) {
     console.error(`[mail] Failed "${subject}" to ${to}:`, e instanceof Error ? e.message : e);

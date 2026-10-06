@@ -16,7 +16,7 @@ export interface OwnerLite {
   email?: string;
   phone?: string;
   profileImage?: string;
-  realtorProfile?: { company?: string; verified?: boolean };
+  realtorProfile?: { company?: string; verified?: boolean; verifiedUntil?: string | null };
   userType?: UserType;
   hostProfile?: HostProfile;
 }
@@ -40,6 +40,7 @@ export interface ShortletDetails {
 export interface PropertyDoc {
   _id: string;
   title: string;
+  verification?: { verified?: boolean; via?: "property" | "realtor"; verifiedAt?: string; until?: string | null };
   slug: string;
   description: string;
   propertyType: PropertyType;
