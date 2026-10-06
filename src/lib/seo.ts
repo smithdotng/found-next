@@ -1,4 +1,4 @@
-import { mediaUrl } from "./media";
+import { MEDIA_BASE_URL, mediaUrl } from "./media";
 import type { Metadata } from "next";
 
 export const SITE_NAME = "Found Properties";
@@ -52,9 +52,21 @@ interface PageSeo {
  * appear on every route. Next.js merges metadata shallowly, so openGraph/twitter
  * are always returned in full rather than relying on the root layout.
  */
+/**
+ * The share image for a page. User uploads (listing, blog and project photos) go through
+ * /og/uploads/..., which serves a 1200x630 JPEG from our own domain; site assets are used as-is.
+ */
+export function ogImageUrl(src?: string | null) {
+  const img = src || DEFAULT_OG_IMAGE;
+  const uploads = img.match(/\/uploads\/(?:properties\/)?(.+)$/);
+  const isUpload = img.startsWith("/uploads/") || Boolean(MEDIA_BASE_URL && img.startsWith(MEDIA_BASE_URL + "/uploads/"));
+  if (isUpload && uploads) return `${siteUrl()}/og/uploads/${uploads[1]}`;
+  return absoluteUrl(img);
+}
+
 export function pageMetadata(seo: PageSeo): Metadata {
   const description = seo.description || DEFAULT_DESCRIPTION;
-  const image = absoluteUrl(seo.image || DEFAULT_OG_IMAGE);
+  const image = ogImageUrl(seo.image);
   const url = absoluteUrl(seo.path);
   const isDefaultImage = !seo.image || seo.image === DEFAULT_OG_IMAGE;
   const images = [
@@ -63,7 +75,7 @@ export function pageMetadata(seo: PageSeo): Metadata {
       width: 1200,
       height: 630,
       alt: seo.imageAlt || seo.title,
-      ...(isDefaultImage ? { type: "image/jpeg" } : {}),
+      type: isDefaultImage || image.includes("/og/uploads/") ? "image/jpeg" : undefined,
     },
   ];
 

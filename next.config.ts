@@ -22,7 +22,7 @@ const nextConfig: NextConfig = {
   // This app sits inside the Express project folder; keep Turbopack rooted here.
   turbopack: { root: path.resolve(__dirname) },
   // Mongoose and nodemailer run on the server only; keep them out of bundling.
-  serverExternalPackages: ["mongoose", "nodemailer", "qrcode"],
+  serverExternalPackages: ["mongoose", "nodemailer", "qrcode", "sharp"],
   experimental: {
     serverActions: {
       // Listing forms upload up to 10 photos (5MB each).
