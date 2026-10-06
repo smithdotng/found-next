@@ -81,6 +81,10 @@ const nextConfig: NextConfig = {
       { source: "/admin/users", destination: "/dashboard/users", permanent: false },
       { source: "/admin/realtors", destination: "/dashboard/users?type=realtor", permanent: false },
       { source: "/admin/agents", destination: "/dashboard/users?type=agent", permanent: false },
+      // Links in admin alert emails sent before the move to Next.js.
+      { source: "/admin/agents/:id", destination: "/dashboard/users?type=agent", permanent: false },
+      { source: "/admin/realtors/:id", destination: "/dashboard/users?type=realtor", permanent: false },
+      { source: "/admin/properties/:id", destination: "/dashboard/approvals", permanent: false },
       { source: "/admin/inquiries/property", destination: "/dashboard/inquiries", permanent: false },
       { source: "/admin/blogs", destination: "/dashboard/blog", permanent: false },
       { source: "/admin/featured", destination: "/dashboard/featured", permanent: false },

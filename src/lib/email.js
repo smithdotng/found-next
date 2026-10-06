@@ -124,7 +124,7 @@ const sendWelcomeEmailToRealtor = async (user) => {
                             </ul>
                             
                             <div style="text-align: center;">
-                                <a href="${baseUrl}/realtor/dashboard" class="btn">Go to Your Dashboard</a>
+                                <a href="${baseUrl}/dashboard" class="btn">Go to Your Dashboard</a>
                             </div>
                             
                             <p><strong>Next Steps:</strong></p>
@@ -204,7 +204,7 @@ const sendWelcomeEmailToAgent = async (user) => {
                             </div>
                             
                             <div style="text-align: center;">
-                                <a href="${baseUrl}/agent/pending" class="btn">Track Application Status</a>
+                                <a href="${baseUrl}/dashboard" class="btn">Track Application Status</a>
                             </div>
                             
                             <p>Best regards,<br>The Found Team</p>
@@ -270,7 +270,7 @@ const sendAgentApprovalEmail = async (agent) => {
                             <p>Great news! Your agent application has been <strong>approved</strong>.</p>
                             
                             <div style="text-align: center;">
-                                <a href="${baseUrl}/agent/dashboard" class="btn">Go to Your Dashboard</a>
+                                <a href="${baseUrl}/dashboard" class="btn">Go to Your Dashboard</a>
                             </div>
                             
                             <p>Your unique referral code is: <strong>${agent.agentProfile.uniqueLink}</strong></p>
@@ -349,7 +349,7 @@ const sendInquiryNotificationToRealtor = async (inquiry, property, realtor) => {
                             </div>
                             
                             <div style="text-align: center;">
-                                <a href="${baseUrl}/realtor/inquiries" class="btn">View All Inquiries</a>
+                                <a href="${baseUrl}/dashboard/inquiries" class="btn">View All Inquiries</a>
                                 <a href="${baseUrl}/properties/${property.slug}" class="btn" style="background: #28a745;">View Property</a>
                             </div>
                             
@@ -433,7 +433,7 @@ const sendInquiryNotificationToAgent = async (inquiry, property, agent) => {
                             </div>
                             
                             <div style="text-align: center;">
-                                <a href="${baseUrl}/agent/promotions" class="btn">View Your Promotions</a>
+                                <a href="${baseUrl}/dashboard/promotions" class="btn">View Your Promotions</a>
                             </div>
                             
                             <p><strong>What happens next?</strong></p>
@@ -517,7 +517,7 @@ const sendAdminInquiryNotification = async (inquiry, property) => {
                             </div>
                             
                             <div style="text-align: center;">
-                                <a href="${baseUrl}/admin/inquiries/property/${inquiry._id}" class="btn">View Inquiry in Admin Panel</a>
+                                <a href="${baseUrl}/dashboard/inquiries" class="btn">View Inquiry in Admin Panel</a>
                             </div>
                             
                             <p>Best regards,<br>Found Properties System</p>
@@ -748,7 +748,7 @@ const sendAdminNewAccountNotification = async (user) => {
                             </div>
 
                             <div style="text-align: center;">
-                                <a href="${baseUrl}/admin/${user.userType === 'agent' ? 'agents' : 'realtors'}/${user._id}" class="btn">View in Admin Panel</a>
+                                <a href="${baseUrl}/dashboard/users?type=${user.userType || 'all'}&q=${encodeURIComponent(user.email || '')}" class="btn">View in Admin Panel</a>
                             </div>
 
                             <p>Best regards,<br>Found Properties System</p>
@@ -828,7 +828,7 @@ const sendAdminNewPropertyNotification = async (property, owner) => {
                             </div>
 
                             <div style="text-align: center;">
-                                <a href="${baseUrl}/admin/properties/${property._id}" class="btn">Review in Admin Panel</a>
+                                <a href="${baseUrl}/dashboard/approvals" class="btn">Review in Admin Panel</a>
                             </div>
 
                             <p>Best regards,<br>Found Properties System</p>
