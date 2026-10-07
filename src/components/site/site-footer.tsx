@@ -18,8 +18,8 @@ export function SiteFooter() {
           <ul className="mt-5 space-y-2 text-sm text-slate-600">
             <li className="flex items-center gap-2">
               <Phone className="size-4 text-brand-600" /> Free support:{" "}
-              <a href="tel:+2348063006890" className="font-medium text-ink hover:text-brand-600">
-                +234 806 300 6890
+              <a href="tel:+2349092357149" className="font-medium text-ink hover:text-brand-600">
+                +234 909 235 7149
               </a>
             </li>
             <li className="flex items-center gap-2">

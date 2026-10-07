@@ -85,7 +85,7 @@ export default async function AgreementPage({ searchParams }: PageProps<"/dashbo
           ) : (
             <div className="card p-5 text-sm text-slate-600 print:hidden">
               <p className="font-semibold text-ink">Questions about the agreement?</p>
-              <p className="mt-1">Email hello@found.ng or call 0806 300 6890 before signing.</p>
+              <p className="mt-1">Email hello@found.ng or call 0909 235 7149 before signing.</p>
             </div>
           )}
         </aside>

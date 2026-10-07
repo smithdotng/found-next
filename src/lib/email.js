@@ -1046,7 +1046,7 @@ const buildNewsletterHtml = (subject, contentHtml, unsubscribeUrl) => {
                 <!-- Footer -->
                 <div style="background:#1a1a2e; padding:28px 40px; text-align:center; color:#c8c8d4; font-size:12px; line-height:1.6;">
                     <p style="margin:0 0 6px;"><strong style="color:#fff;">Found Projects &amp; Realty Limited</strong></p>
-                    <p style="margin:0 0 6px;">📞 +234 806 300 6890 &nbsp;|&nbsp; 📧 hello@found.ng</p>
+                    <p style="margin:0 0 6px;">📞 +234 909 235 7149 &nbsp;|&nbsp; 📧 hello@found.ng</p>
                     <p style="margin:0 0 12px;"><a href="${baseUrl}" style="color:#f0c674; text-decoration:none;">found.ng</a> &nbsp;|&nbsp; @founddotng</p>
                     <p style="margin:0; color:#8a8a9a;">© 2026 Found Projects &amp; Realty Limited. You are receiving this email because you are registered on our platform.
                     ${unsubscribeUrl ? ` &nbsp;|&nbsp; <a href="${unsubscribeUrl}" style="color:#8a8a9a; text-decoration:underline;">Unsubscribe</a>` : ''}</p>

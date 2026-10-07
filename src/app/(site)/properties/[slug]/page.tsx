@@ -295,8 +295,8 @@ export default async function PropertyPage({ params }: PageProps<"/properties/[s
                 <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">Enquiries are closed for this listing.</p>
               )}
             </div>
-            <a href="tel:+2348063006890" className="mt-4 flex items-center justify-center gap-2 text-sm font-medium text-slate-600 hover:text-brand-600">
-              <Phone className="size-4" /> Or call Found support: 0806 300 6890
+            <a href="tel:+2349092357149" className="mt-4 flex items-center justify-center gap-2 text-sm font-medium text-slate-600 hover:text-brand-600">
+              <Phone className="size-4" /> Or call Found support: 0909 235 7149
             </a>
           </div>
           <p className="mt-3 px-2 text-center text-xs leading-5 text-slate-500">

@@ -9,7 +9,7 @@ import { ContactForm } from "./contact-form";
 export const metadata: Metadata = pageMetadata({
   title: "Contact Us - Found Properties",
   absoluteTitle: true,
-  description: "Get in touch with Found Projects & Realty Limited. Call +234 806 300 6890, email hello@found.ng or visit us in Wuse 2, Abuja.",
+  description: "Get in touch with Found Projects & Realty Limited. Call +234 909 235 7149, email hello@found.ng or visit us in Wuse 2, Abuja.",
   path: "/contact",
 });
 
@@ -19,7 +19,7 @@ export default function ContactPage() {
       <PageHero eyebrow="We're here to help" title="Contact us" lead="Questions about a listing, your account or partnering with us? Drop us a line." crumbs={[{ label: "Contact" }]} />
       <div className="container-page grid gap-10 py-14 lg:grid-cols-[1fr_1.3fr]">
         <div className="space-y-4">
-          <Info icon={Phone} title="Phone" lines={[<a key="p" href="tel:+2348063006890" className="hover:text-brand-600">+234 806 300 6890</a>]} />
+          <Info icon={Phone} title="Phone" lines={[<a key="p" href="tel:+2349092357149" className="hover:text-brand-600">+234 909 235 7149</a>]} />
           <Info icon={Mail} title="Email" lines={[<a key="e" href="mailto:hello@found.ng" className="hover:text-brand-600">hello@found.ng</a>]} />
           <Info icon={MapPin} title="Office" lines={["Suite 5 Gwandal Centre", "1015 Frai Close, Wuse 2", "Abuja, Nigeria"]} />
           <Info icon={Clock} title="Response time" lines={["We aim to respond within 24 hours on business days."]} />
