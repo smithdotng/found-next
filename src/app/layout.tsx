@@ -52,6 +52,8 @@ export const viewport: Viewport = {
 };
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID ?? "G-H8R24Q91C0";
+// Metricool web analytics (connects found.ng to the @founddotng Instagram brand in Metricool).
+const METRICOOL_HASH = process.env.NEXT_PUBLIC_METRICOOL_HASH ?? "1255dcdd1ae32211619b54e38f83c42b";
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
@@ -68,6 +70,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_ID}');`}
             </Script>
           </>
+        ) : null}
+        {METRICOOL_HASH ? (
+          <Script id="metricool" strategy="afterInteractive">
+            {`(function(){var s=document.createElement("script");s.src="https://tracker.metricool.com/resources/be.js";s.async=true;s.onload=function(){window.beTracker&&window.beTracker.t({hash:"${METRICOOL_HASH}"});};document.head.appendChild(s);})();`}
+          </Script>
         ) : null}
       </body>
     </html>
