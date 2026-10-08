@@ -122,9 +122,10 @@ export async function acceptAgreement(_prev: FormState, fd: FormData): Promise<F
   if (signedName.toLowerCase().replace(/\s+/g, " ") !== user.name.toLowerCase().replace(/\s+/g, " "))
     return { ok: false, message: `Type your full name exactly as on your account (${user.name}) to sign.`, errors: { signedName: "Name doesn't match" } };
   if (!fd.get("agree")) return { ok: false, message: "Tick the box to confirm you agree.", errors: { agree: "Required" } };
+  // Payout account is optional at signing; if any detail is given, it must be complete.
   const bank = readBank(fd);
-  if (bank.error) return { ok: false, message: "Add the bank account Found should send your payouts to.", errors: bank.error };
-  user.hostProfile.bankDetails = bank.details;
+  if (bank.any && bank.error) return { ok: false, message: "Complete your payout account details, or leave them all blank to add later.", errors: bank.error };
+  if (bank.any) user.hostProfile.bankDetails = bank.details;
 
   const h = await headers();
   const rate = user.hostProfile.commissionRate ?? DEFAULT_COMMISSION;
@@ -145,7 +146,7 @@ export async function acceptAgreement(_prev: FormState, fd: FormData): Promise<F
     `Listing agreement signed: ${user.name}`,
     apartmentEmail({
       heading: "A host signed the listing agreement",
-      intro: `${user.name} accepted the Found Apartments listing agreement (version ${AGREEMENT_VERSION}) at ${rate}% commission. Payouts go to ${bank.details.bankName} ${bank.details.accountNumber} (${bank.details.accountName}). Their pending apartments are ready for review.`,
+      intro: `${user.name} accepted the Found Apartments listing agreement (version ${AGREEMENT_VERSION}) at ${rate}% commission. ${bank.any ? `Payouts go to ${bank.details.bankName} ${bank.details.accountNumber} (${bank.details.accountName}).` : "No payout account yet: collect it before their first payout."} Their pending apartments are ready for review.`,
       cta: { label: "Review apartments", href: "/dashboard/approvals" },
     }),
   );
@@ -182,7 +183,7 @@ export async function reviewHost(id: string, decision: "approved" | "rejected" |
       "You're approved — sign your Found Apartments agreement",
       apartmentEmail({
         heading: "Your host account is approved",
-        intro: `Good news, ${host.name.split(" ")[0]}! You've been vetted as a Found Apartments host. Please review and sign the listing agreement, and add the bank account for your payouts, so your apartments can go live.`,
+        intro: `Good news, ${host.name.split(" ")[0]}! You've been vetted as a Found Apartments host. Please review and sign the listing agreement so your apartments can go live.`,
         rows: [
           ["Found's commission", `${rate}% of the accommodation total`],
           ["How you're paid", `Guests pay Found; Found sends you the rest within ${PAYOUT_DAYS} working days of check-in`],

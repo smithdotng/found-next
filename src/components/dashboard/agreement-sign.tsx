@@ -22,8 +22,8 @@ export function AgreementSign({ name, rate, bank }: { name: string; rate: number
         {state?.errors?.signedName ? <p className="mt-1 text-xs text-rose-600">{state.errors.signedName}</p> : <p className="field-hint">Must match your account name: {name}</p>}
       </div>
       <fieldset className="space-y-3 rounded-xl bg-slate-50 p-3">
-        <legend className="px-1 text-sm font-semibold text-ink">Payout account</legend>
-        <p className="text-xs text-slate-500">Found sends your earnings here within the agreed days after each check-in.</p>
+        <legend className="px-1 text-sm font-semibold text-ink">Payout account <span className="font-normal text-slate-500">(optional)</span></legend>
+        <p className="text-xs text-slate-500">Where Found sends your earnings after each check-in. You can add it later; we&apos;ll need it before your first payout.</p>
         {(["bankName", "accountNumber", "accountName"] as const).map((k) => (
           <div key={k}>
             <label className="field-label" htmlFor={`b-${k}`}>{k === "bankName" ? "Bank" : k === "accountNumber" ? "Account number" : "Account name"}</label>
