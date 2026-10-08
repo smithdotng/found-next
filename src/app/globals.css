@@ -169,3 +169,10 @@
 @utility safe-bottom {
   padding-bottom: env(safe-area-inset-bottom);
 }
+
+/* Found Prestige display type (font loaded only on Prestige pages) */
+.prestige-display {
+  font-family: var(--font-prestige), Georgia, "Times New Roman", serif;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+}

@@ -17,6 +17,7 @@ import BookingModel from "./Booking";
 import BlockedDateModel from "./BlockedDate";
 import VerificationRequestModel from "./VerificationRequest";
 import PreVerificationModel from "./PreVerification";
+import PrivateClientModel from "./PrivateClient";
 
 // The schemas live in plain JS (ported verbatim from the Express app);
 // these aliases give the TypeScript side a usable Model type.
@@ -37,3 +38,4 @@ export const Booking = BookingModel as Model<any>;
 export const BlockedDate = BlockedDateModel as Model<any>;
 export const VerificationRequest = VerificationRequestModel as Model<any>;
 export const PreVerification = PreVerificationModel as Model<any>;
+export const PrivateClient = PrivateClientModel as Model<any>;

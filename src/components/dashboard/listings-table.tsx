@@ -6,12 +6,13 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import clsx from "clsx";
 import {
   ShieldCheck,
-  Check, ExternalLink, Eye, Inbox, Loader2, MoreHorizontal, Pencil, Star, Trash2, XCircle, CircleDollarSign, KeyRound, EyeOff, RotateCcw,
+  Check, ExternalLink, Eye, Inbox, Loader2, MoreHorizontal, Pencil, Star, Trash2, XCircle, CircleDollarSign, KeyRound, EyeOff, RotateCcw, Gem,
 } from "lucide-react";
 import { SmartImage } from "@/components/ui/smart-image";
 import { StatusBadge } from "./ui";
 import { toast } from "@/components/ui/toaster";
 import { approveListing, deleteListing, rejectListing, setListingStatus, toggleFeatured } from "@/app/actions/listings";
+import { setPrestige } from "@/app/actions/prestige";
 import { formatPrice, locationLine, primaryImage, timeAgo, typeLabel, txLabel } from "@/lib/format";
 import type { PropertyDoc, PropertyStatus } from "@/lib/types";
 
@@ -180,6 +181,9 @@ function RowActions({ p, isAdmin }: { p: Row; isAdmin: boolean }) {
           ) : null}
           {isAdmin ? (
             <MenuButton icon={Star} onClick={() => run(() => toggleFeatured(p._id))}>{p.featured ? "Unfeature" : "Feature"}</MenuButton>
+          ) : null}
+          {isAdmin && p.propertyType !== "shortlet" ? (
+            <MenuButton icon={Gem} onClick={() => run(() => setPrestige(p._id, !p.prestige))}>{p.prestige ? "Remove from Prestige" : "Add to Prestige"}</MenuButton>
           ) : null}
           <Divider />
           <MenuButton

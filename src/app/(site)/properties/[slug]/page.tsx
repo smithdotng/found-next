@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { getPublicProperty, getSimilarProperties } from "@/lib/queries";
 import { isPropertyVerified, isRealtorVerified } from "@/lib/verification";
+import { meetsPrestige } from "@/lib/prestige";
 import { connectDB } from "@/lib/db";
 import { Property } from "@/lib/models";
 import { getSession } from "@/lib/session";
@@ -142,6 +143,9 @@ export default async function PropertyPage({ params }: PageProps<"/properties/[s
                 <BadgeCheck className="size-3.5" /> Verified by Found
               </Link>
             ) : null}
+            {isPropertyVerified(p) && meetsPrestige(p) ? (
+              <Link href="/prestige" className="chip bg-[#0b1622] text-[#e9d9b6] ring-[#c8a96a]/40">Found Prestige</Link>
+            ) : null}
           </div>
           <h1 className="mt-3 text-2xl font-bold leading-tight tracking-tight text-ink sm:text-3xl">{p.title}</h1>
           <p className="mt-2 flex items-start gap-1.5 text-slate-600">
@@ -164,6 +168,16 @@ export default async function PropertyPage({ params }: PageProps<"/properties/[s
                 </div>
               ))}
             </dl>
+          ) : null}
+
+          {isPropertyVerified(p) && meetsPrestige(p) ? (
+            <Link href={`/prestige?property=${p._id}#concierge`} className="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[#0b1622] p-5 text-white transition hover:bg-[#13233a]">
+              <span>
+                <span className="block text-xs font-semibold uppercase tracking-[0.2em] text-[#c8a96a]">Found Prestige</span>
+                <span className="mt-1 block text-[15px] text-white/85">Arrange a private viewing with a dedicated relationship manager, with the full verification file to hand.</span>
+              </span>
+              <span className="rounded-xl bg-[#c8a96a] px-4 py-2.5 text-sm font-semibold text-[#0b1622]">Request a private viewing</span>
+            </Link>
           ) : null}
 
           <section className="mt-10">

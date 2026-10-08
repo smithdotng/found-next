@@ -50,6 +50,7 @@ export function SiteFooter() {
         </FooterCol>
         <FooterCol title="Partners" className="lg:col-span-2">
           <FooterLink href="/for-realtors">For realtors</FooterLink>
+          <FooterLink href="/prestige">Found Prestige</FooterLink>
           <FooterLink href="/get-verified">Get verified</FooterLink>
           <FooterLink href="/agent/register">Become an agent</FooterLink>
           <FooterLink href="/how-it-works">How it works</FooterLink>

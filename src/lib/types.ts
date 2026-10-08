@@ -74,6 +74,7 @@ export interface PropertyDoc {
   rejectionReason?: string;
   views: number;
   featured?: boolean;
+  prestige?: boolean;
   listingTier?: "free" | "standard" | "premium";
   agencyFee?: number;
   shortletDetails?: ShortletDetails;

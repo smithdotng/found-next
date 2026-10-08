@@ -93,6 +93,8 @@ const propertySchema = new mongoose.Schema({
     featuredExpiry: Date,
     // "Verified by Found" badge. Set per property (paid property verification) or for all of a
     // realtor's listings while their annual realtor verification is active. Added by the Next.js app.
+    // Hand-picked by Found for the Prestige collection (Verified listings only)
+    prestige: { type: Boolean, default: false },
     verification: {
         verified: { type: Boolean, default: false },
         via: { type: String, enum: ['property', 'realtor'] },

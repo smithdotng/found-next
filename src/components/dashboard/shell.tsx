@@ -7,13 +7,12 @@ import { useState } from "react";
 import clsx from "clsx";
 import {
   LayoutDashboard, Building2, PlusCircle, Inbox, UserCircle, LogOut, Menu, X, ClipboardCheck, Users, Newspaper, Star, Landmark,
-  Megaphone, Search, Wallet, ExternalLink, Download, Receipt, Mail, CalendarCheck, CalendarDays, FileSignature, KeyRound, BadgeCheck,
-} from "lucide-react";
+  Megaphone, Search, Wallet, ExternalLink, Download, Receipt, Mail, CalendarCheck, CalendarDays, FileSignature, KeyRound, BadgeCheck, Gem } from "lucide-react";
 import { usePwa } from "@/components/pwa/pwa-provider";
 
 type NavItem = { href: string; label: string; icon: typeof Inbox; badge?: number; exact?: boolean };
 type User = { name: string; email: string; type: "realtor" | "agent" | "admin" | "host"; superAdmin: boolean };
-type Counts = { approvals: number; inquiries: number; bookings: number; hosts: number; verifications: number };
+type Counts = { approvals: number; inquiries: number; bookings: number; hosts: number; verifications: number; privateClients?: number };
 
 function navFor(user: User, counts: Counts): { title?: string; items: NavItem[] }[] {
   if (user.type === "host") {
@@ -61,6 +60,7 @@ function navFor(user: User, counts: Counts): { title?: string; items: NavItem[] 
           { href: "/dashboard/inquiries", label: "Enquiries", icon: Inbox, badge: counts.inquiries },
           { href: "/dashboard/users", label: "Users", icon: Users },
           { href: "/dashboard/verification", label: "Verifications", icon: BadgeCheck, badge: counts.verifications },
+          { href: "/dashboard/private-clients", label: "Prestige clients", icon: Gem, badge: counts.privateClients },
         ],
       },
       {
