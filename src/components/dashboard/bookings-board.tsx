@@ -7,11 +7,11 @@ import clsx from "clsx";
 import {
   ArrowLeft, BadgeCheck, CalendarDays, Check, CircleDollarSign, Clock, DoorClosed, DoorOpen, ExternalLink, Loader2, Mail, MessageCircle, Phone, UserX, Users, X,
 } from "lucide-react";
-import { markBookingPaid, respondToBooking, setCommissionStatus, updateBookingStatus } from "@/app/actions/bookings";
+import { markBookingPaid, respondToBooking, setPayoutStatus, settleCaution, updateBookingStatus } from "@/app/actions/bookings";
 import { toast } from "@/components/ui/toaster";
 import { SmartImage } from "@/components/ui/smart-image";
 import { formatDate, formatPrice, primaryImage, timeAgo } from "@/lib/format";
-import { BOOKING_STATUS, stayDates, todayLagos } from "@/lib/stay";
+import { BOOKING_STATUS, PAYOUT_DAYS, bookingStatusMeta, PAYOUT_LABEL, splitBooking, stayDates, todayLagos } from "@/lib/stay";
 import type { ManagedBooking } from "@/lib/bookings-data";
 
 function waNumber(phone: string) {
@@ -21,7 +21,6 @@ function waNumber(phone: string) {
   return d;
 }
 
-const COMMISSION_LABEL: Record<string, string> = { not_due: "Not due yet", due: "Due to Found", paid: "Received by Found", waived: "Waived" };
 
 export function BookingsBoard({ items, isAdmin, initialOpen }: { items: ManagedBooking[]; isAdmin: boolean; initialOpen?: string }) {
   const [activeId, setActiveId] = useState<string | null>(initialOpen && items.some((i) => i._id === initialOpen) ? initialOpen : null);
@@ -31,7 +30,7 @@ export function BookingsBoard({ items, isAdmin, initialOpen }: { items: ManagedB
     <div className="card grid min-h-[28rem] grid-cols-1 overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
       <ul className={clsx("min-w-0 divide-y divide-slate-100 lg:border-r lg:border-slate-100", active && "hidden lg:block")}>
         {items.map((b) => {
-          const st = BOOKING_STATUS[b.status];
+          const st = bookingStatusMeta(b);
           return (
             <li key={b._id}>
               <button type="button" onClick={() => setActiveId(b._id)} className={clsx("flex w-full gap-3 px-4 py-3.5 text-left transition hover:bg-slate-50", activeId === b._id && "bg-brand-50/60")}>
@@ -74,6 +73,11 @@ function Detail({ b, isAdmin, onBack }: { b: ManagedBooking; isAdmin: boolean; o
   const [note, setNote] = useState("");
   const [mode, setMode] = useState<"" | "decline" | "cancel">("");
   const [ref, setRef] = useState(b.payment?.transactionReference ?? "");
+  const [payoutRef, setPayoutRef] = useState("");
+  const [refund, setRefund] = useState(String(b.pricing.securityDeposit ?? 0));
+  const split = splitBooking(b.pricing, b.commission?.rate);
+  const payout = b.payout?.amount ?? split.hostPayout;
+  const paid = b.payment?.status === "paid";
   const first = b.guest.name.split(" ")[0];
   const run = (fn: () => Promise<{ ok: boolean; message: string }>) =>
     start(async () => {
@@ -101,7 +105,7 @@ function Detail({ b, isAdmin, onBack }: { b: ManagedBooking; isAdmin: boolean; o
             </Link>
           ) : <p className="text-sm text-slate-500">{b.propertyTitle}</p>}
         </div>
-        <span className={`chip ${BOOKING_STATUS[b.status]?.tone}`}>{BOOKING_STATUS[b.status]?.label}</span>
+        <span className={`chip ${bookingStatusMeta(b).tone}`}>{bookingStatusMeta(b).label}</span>
       </div>
 
       <div className="flex-1 space-y-5 overflow-y-auto p-5">
@@ -126,15 +130,22 @@ function Detail({ b, isAdmin, onBack }: { b: ManagedBooking; isAdmin: boolean; o
           {b.pricing.discount ? <Line label={`${b.pricing.discountType ?? ""} discount`} value={`−${formatPrice(b.pricing.discount)}`} className="capitalize text-emerald-700" /> : null}
           {b.pricing.cleaningFee ? <Line label="Cleaning fee" value={formatPrice(b.pricing.cleaningFee)} /> : null}
           {b.pricing.vat ? <Line label={`VAT (${b.pricing.vatRate}%)`} value={formatPrice(b.pricing.vat)} /> : null}
-          <Line label={b.pricing.vat ? "Guest pays you (incl. VAT)" : "Guest pays you"} value={formatPrice(b.pricing.total)} className="mt-1 border-t border-slate-100 pt-2 font-bold text-ink" />
-          {b.pricing.vat ? <p className="text-xs text-slate-500">VAT is collected from the guest for remittance to the tax authority (NRS); it isn&apos;t your income.</p> : null}
-          {b.pricing.securityDeposit ? <Line label="Refundable caution fee" value={formatPrice(b.pricing.securityDeposit)} className="text-slate-500" /> : null}
-          {b.commission?.amount ? (
-            <div className="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-900">
-              <Line label={`Found commission (${b.commission.rate}%)`} value={formatPrice(b.commission.amount)} className="font-semibold" />
-              <p className="mt-1">{COMMISSION_LABEL[b.commission.status ?? "not_due"]}{b.commission.status === "due" ? " — pay within 7 days of check-out" : ""}{b.commission.paidAt ? ` · ${formatDate(b.commission.paidAt)}` : ""}</p>
-            </div>
-          ) : null}
+          {b.pricing.securityDeposit ? <Line label="Refundable caution fee" value={formatPrice(b.pricing.securityDeposit)} /> : null}
+          <Line label="Guest pays Found" value={formatPrice(split.guestPays)} className="mt-1 border-t border-slate-100 pt-2 font-bold text-ink" />
+          <div className="mt-3 rounded-lg bg-brand-50/70 p-3 text-xs text-slate-700">
+            <Line label="Accommodation total" value={formatPrice(split.net)} />
+            {b.commission?.rate != null ? <Line label={`Found commission (${b.commission.rate}%)`} value={`−${formatPrice(split.commission)}`} /> : null}
+            <Line label={isAdmin ? "Payout to host" : "Your payout"} value={formatPrice(payout)} className="mt-1 border-t border-brand-100 pt-1.5 text-sm font-bold text-ink" />
+            <p className="mt-1 text-slate-600">
+              {PAYOUT_LABEL[b.payout?.status ?? "not_due"]}
+              {b.payout?.status === "due" && b.payout.dueAt ? ` · by ${formatDate(b.payout.dueAt)}` : ""}
+              {b.payout?.status === "paid" && b.payout.paidAt ? ` · ${formatDate(b.payout.paidAt)}${b.payout.reference ? ` · ref ${b.payout.reference}` : ""}` : ""}
+              {b.payout?.status === "not_due" || !b.payout?.status ? ` · within ${PAYOUT_DAYS} working days of check-in` : ""}
+            </p>
+            {b.pricing.vat || b.pricing.securityDeposit ? (
+              <p className="mt-1 text-slate-500">{b.pricing.vat ? "Found remits the VAT to the tax authority. " : ""}{b.pricing.securityDeposit ? "Found holds the caution fee and refunds the guest after check-out, less documented damage." : ""}</p>
+            ) : null}
+          </div>
         </div>
 
         {/* Actions */}
@@ -149,14 +160,14 @@ function Detail({ b, isAdmin, onBack }: { b: ManagedBooking; isAdmin: boolean; o
             </div>
           ) : (
             <div className="space-y-2">
-              <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} className="field" placeholder="Message for the guest when you confirm (payment details, directions)… optional" />
+              <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} className="field" placeholder="Message for the guest (directions, check-in tips)… optional" />
               <div className="flex flex-wrap gap-2">
                 <button type="button" className="btn bg-emerald-600 text-white hover:bg-emerald-700" disabled={pending} onClick={() => run(() => respondToBooking(b._id, "confirm", note))}>
                   {pending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />} Accept booking
                 </button>
                 <button type="button" className="btn-outline text-rose-600" onClick={() => setMode("decline")}><X className="size-4" /> Decline</button>
               </div>
-              <p className="text-xs text-slate-500">Accepting holds these dates and emails {first} a confirmation. You then arrange payment directly.</p>
+              <p className="text-xs text-slate-500">Accepting holds these dates and sends {first} Found&apos;s payment details. The guest pays Found, not you. We&apos;ll email you as soon as the payment is in.</p>
             </div>
           )
         ) : null}
@@ -164,16 +175,20 @@ function Detail({ b, isAdmin, onBack }: { b: ManagedBooking; isAdmin: boolean; o
         {["confirmed", "checked_in"].includes(b.status) ? (
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 p-3">
-              <CircleDollarSign className={clsx("size-5", b.payment?.status === "paid" ? "text-emerald-600" : "text-slate-400")} />
-              <span className="text-sm font-medium text-ink">{b.payment?.status === "paid" ? `Paid ${b.payment.paidAt ? formatDate(b.payment.paidAt) : ""}` : "Payment not recorded"}</span>
-              {b.payment?.status !== "paid" ? (
-                <>
-                  <input value={ref} onChange={(e) => setRef(e.target.value)} className="field !w-40 !py-1.5 text-xs" placeholder="Transfer ref (optional)" />
-                  <button type="button" className="btn-outline btn-sm" disabled={pending} onClick={() => run(() => markBookingPaid(b._id, true, ref))}>Mark as paid</button>
-                </>
-              ) : (
-                <button type="button" className="btn-ghost btn-sm ml-auto" disabled={pending} onClick={() => run(() => markBookingPaid(b._id, false))}>Undo</button>
-              )}
+              <CircleDollarSign className={clsx("size-5", paid ? "text-emerald-600" : "text-amber-500")} />
+              <span className="text-sm font-medium text-ink">{paid ? `Guest paid Found${b.payment?.paidAt ? ` · ${formatDate(b.payment.paidAt)}` : ""}` : "Awaiting the guest's payment to Found"}</span>
+              {isAdmin ? (
+                !paid ? (
+                  <>
+                    <input value={ref} onChange={(e) => setRef(e.target.value)} className="field !w-40 !py-1.5 text-xs" placeholder="Transfer ref (optional)" />
+                    <button type="button" className="btn-outline btn-sm" disabled={pending} onClick={() => run(() => markBookingPaid(b._id, true, ref))}>Payment received</button>
+                  </>
+                ) : (
+                  <button type="button" className="btn-ghost btn-sm ml-auto" disabled={pending} onClick={() => run(() => markBookingPaid(b._id, false))}>Undo</button>
+                )
+              ) : !paid ? (
+                <p className="w-full text-xs text-slate-500">Don&apos;t collect payment yourself. Found confirms it here, then you can check the guest in.</p>
+              ) : null}
             </div>
             {mode === "cancel" ? (
               <div className="space-y-2">
@@ -187,7 +202,7 @@ function Detail({ b, isAdmin, onBack }: { b: ManagedBooking; isAdmin: boolean; o
               <div className="flex flex-wrap gap-2">
                 {b.status === "confirmed" ? (
                   <>
-                    <button type="button" className="btn-primary" disabled={pending || !arrived} title={arrived ? "" : "Available from the check-in date"} onClick={() => run(() => updateBookingStatus(b._id, "checked_in"))}><DoorOpen className="size-4" /> Guest checked in</button>
+                    <button type="button" className="btn-primary" disabled={pending || !arrived || (!paid && !isAdmin)} title={!paid && !isAdmin ? "Available once Found has received the guest's payment" : arrived ? "" : "Available from the check-in date"} onClick={() => run(() => updateBookingStatus(b._id, "checked_in"))}><DoorOpen className="size-4" /> Guest checked in</button>
                     {arrived ? <button type="button" className="btn-outline" disabled={pending} onClick={() => run(() => updateBookingStatus(b._id, "no_show"))}><UserX className="size-4" /> No-show</button> : null}
                     <button type="button" className="btn-ghost text-rose-600" onClick={() => setMode("cancel")}>Cancel booking</button>
                   </>
@@ -199,15 +214,29 @@ function Detail({ b, isAdmin, onBack }: { b: ManagedBooking; isAdmin: boolean; o
           </div>
         ) : null}
 
-        {isAdmin && b.commission?.amount ? (
-          <div className="rounded-xl border border-dashed border-slate-300 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Admin · commission</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {b.commission.status !== "paid" ? <button type="button" className="btn-outline btn-sm" disabled={pending} onClick={() => run(() => setCommissionStatus(b._id, "paid"))}><BadgeCheck className="size-3.5" /> Record as received</button> : null}
-              {b.commission.status === "not_due" ? <button type="button" className="btn-ghost btn-sm" disabled={pending} onClick={() => run(() => setCommissionStatus(b._id, "due"))}>Mark due</button> : null}
-              {b.commission.status !== "waived" && b.commission.status !== "paid" ? <button type="button" className="btn-ghost btn-sm" disabled={pending} onClick={() => run(() => setCommissionStatus(b._id, "waived"))}>Waive</button> : null}
-              {b.commission.status === "paid" || b.commission.status === "waived" ? <button type="button" className="btn-ghost btn-sm" disabled={pending} onClick={() => run(() => setCommissionStatus(b._id, "due"))}>Reopen</button> : null}
-            </div>
+        {isAdmin && paid ? (
+          <div className="space-y-3 rounded-xl border border-dashed border-slate-300 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Admin · payout to host</p>
+            {b.payout?.status !== "paid" ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <input value={payoutRef} onChange={(e) => setPayoutRef(e.target.value)} className="field !w-44 !py-1.5 text-xs" placeholder="Transfer ref (optional)" />
+                <button type="button" className="btn-outline btn-sm" disabled={pending} onClick={() => run(() => setPayoutStatus(b._id, "paid", payoutRef))}><BadgeCheck className="size-3.5" /> Record payout of {formatPrice(payout)}</button>
+                {b.payout?.status !== "on_hold" ? <button type="button" className="btn-ghost btn-sm" disabled={pending} onClick={() => run(() => setPayoutStatus(b._id, "on_hold"))}>Hold</button> : <button type="button" className="btn-ghost btn-sm" disabled={pending} onClick={() => run(() => setPayoutStatus(b._id, "due"))}>Release hold</button>}
+              </div>
+            ) : (
+              <button type="button" className="btn-ghost btn-sm" disabled={pending} onClick={() => run(() => setPayoutStatus(b._id, "due"))}>Reopen payout</button>
+            )}
+            {b.pricing.securityDeposit && b.status === "checked_out" ? (
+              b.caution?.status === "held" || !b.caution?.status ? (
+                <div className="flex flex-wrap items-center gap-2 border-t border-slate-200 pt-3">
+                  <span className="text-xs text-slate-600">Caution fee refund</span>
+                  <input value={refund} onChange={(e) => setRefund(e.target.value)} inputMode="numeric" className="field !w-32 !py-1.5 text-xs" />
+                  <button type="button" className="btn-outline btn-sm" disabled={pending} onClick={() => run(() => settleCaution(b._id, Number(refund.replace(/[^\d]/g, "")) || 0))}>Record refund</button>
+                </div>
+              ) : (
+                <p className="border-t border-slate-200 pt-3 text-xs text-slate-600">Caution fee: {formatPrice(b.caution?.refundedAmount ?? 0)} refunded{b.caution?.refundedAt ? ` · ${formatDate(b.caution.refundedAt)}` : ""}</p>
+              )
+            ) : null}
           </div>
         ) : null}
 

@@ -133,6 +133,31 @@ export function commissionFor(total: number, rate = DEFAULT_COMMISSION) {
   return Math.round((total * rate) / 100);
 }
 
+/** Working days after check-in within which Found remits the host's payout. */
+export const PAYOUT_DAYS = 3;
+/** Hours a guest has to pay Found after the host accepts, before the dates may be released. */
+export const PAY_WITHIN_HOURS = 24;
+
+/**
+ * How a booking's money splits. The guest pays Found the total (accommodation + VAT) plus
+ * the caution fee. Found keeps its commission and the VAT (which it remits to the tax
+ * authority), holds the caution fee until check-out, and remits the rest to the host.
+ */
+export function splitBooking(p: { net?: number; vat?: number; total?: number; securityDeposit?: number }, rate: number | null | undefined) {
+  const net = p.net ?? Math.max(0, (p.total ?? 0) - (p.vat ?? 0));
+  const vat = p.vat ?? 0;
+  const commission = rate != null ? commissionFor(net, rate) : 0;
+  const caution = p.securityDeposit ?? 0;
+  return { guestPays: (p.total ?? net + vat) + caution, net, vat, commission, caution, hostPayout: net - commission };
+}
+
+export const PAYOUT_LABEL: Record<string, string> = {
+  not_due: "Due after check-in",
+  due: "Due to host",
+  paid: "Paid to host",
+  on_hold: "On hold",
+};
+
 export const BOOKING_STATUS: Record<string, { label: string; tone: string }> = {
   pending: { label: "Awaiting host", tone: "bg-amber-50 text-amber-800 ring-amber-600/20" },
   confirmed: { label: "Confirmed", tone: "bg-emerald-50 text-emerald-700 ring-emerald-600/20" },
@@ -143,6 +168,12 @@ export const BOOKING_STATUS: Record<string, { label: string; tone: string }> = {
   expired: { label: "Expired", tone: "bg-slate-100 text-slate-500 ring-slate-500/20" },
   no_show: { label: "No-show", tone: "bg-slate-100 text-slate-500 ring-slate-500/20" },
 };
+
+/** Status chip for a booking: an accepted stay isn't confirmed until the guest has paid Found. */
+export function bookingStatusMeta(b: { status: string; payment?: { status?: string } | null }) {
+  if (b.status === "confirmed" && b.payment?.status !== "paid") return { label: "Awaiting payment", tone: "bg-amber-50 text-amber-800 ring-amber-600/20" };
+  return BOOKING_STATUS[b.status] ?? BOOKING_STATUS.pending;
+}
 
 export const HOLDING_STATUSES = ["confirmed", "checked_in"];
 export const OPEN_STATUSES = ["pending", "confirmed", "checked_in"];

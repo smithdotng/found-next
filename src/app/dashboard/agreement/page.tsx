@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/dashboard/ui";
 import { AgreementSign, PrintButton } from "@/components/dashboard/agreement-sign";
 import { AGREEMENT_VERSION, agreementSections } from "@/lib/agreement";
 import { formatDate } from "@/lib/format";
-import { DEFAULT_COMMISSION } from "@/lib/stay";
+import { DEFAULT_COMMISSION, PAYOUT_DAYS } from "@/lib/stay";
 import type { HostProfile } from "@/lib/types";
 
 export const metadata = { title: "Listing agreement" };
@@ -25,11 +25,14 @@ export default async function AgreementPage({ searchParams }: PageProps<"/dashbo
   const hp = user.hostProfile ?? {};
   const ag = hp.agreement ?? {};
   const signed = ag.status === "accepted";
+  const outdated = signed && ag.version !== AGREEMENT_VERSION;
   const rate = signed ? ag.commissionRate ?? hp.commissionRate ?? DEFAULT_COMMISSION : hp.commissionRate ?? DEFAULT_COMMISSION;
-  const canSign = session.userType === "host" && hp.status === "approved" && !signed;
+  const canSign = session.userType === "host" && hp.status === "approved" && (!signed || outdated);
   const sections = agreementSections({ rate, hostName: user.name, businessName: hp.businessName });
 
-  const banner = signed
+  const banner = outdated
+    ? { icon: Clock, tone: "bg-amber-50 text-amber-900 ring-amber-600/20", text: `We've updated the agreement: guests now pay Found, and Found sends you your payout after check-in. You signed version ${ag.version}; please review and sign version ${AGREEMENT_VERSION}.` }
+    : signed
     ? { icon: BadgeCheck, tone: "bg-emerald-50 text-emerald-800 ring-emerald-600/20", text: `Signed by ${ag.signedName} on ${formatDate(ag.acceptedAt, { day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "2-digit" })}` }
     : hp.status === "approved"
       ? { icon: Clock, tone: "bg-brand-50 text-brand-800 ring-brand-600/20", text: "Ready for your signature. Your apartments go live once you've signed and they're approved." }
@@ -46,11 +49,13 @@ export default async function AgreementPage({ searchParams }: PageProps<"/dashbo
 
       <div className="grid gap-6 xl:grid-cols-[1fr_340px]">
         <article className="card p-6 sm:p-10">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Found Apartments · Version {signed ? ag.version : AGREEMENT_VERSION}</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Found Apartments · Version {signed && !outdated ? ag.version : AGREEMENT_VERSION}</p>
           <h2 className="mt-2 text-2xl font-bold tracking-tight text-ink">Host Listing Agreement</h2>
           <div className="mt-6 rounded-2xl bg-slate-50 p-4 text-sm">
             <p><span className="text-slate-500">Host:</span> <strong>{user.name}</strong>{hp.businessName ? ` (${hp.businessName})` : ""}</p>
             <p className="mt-1"><span className="text-slate-500">Found&apos;s commission:</span> <strong>{rate}% of the accommodation total per booking</strong></p>
+            <p className="mt-1"><span className="text-slate-500">Payments:</span> <strong>guests pay Found; Found pays you the accommodation total less commission, within {PAYOUT_DAYS} working days of check-in</strong></p>
+            {hp.bankDetails?.accountNumber ? <p className="mt-1"><span className="text-slate-500">Payout account:</span> <strong>{hp.bankDetails.bankName} · {hp.bankDetails.accountNumber} · {hp.bankDetails.accountName}</strong></p> : null}
           </div>
           <div className="mt-8 space-y-6">
             {sections.map((s) => (
@@ -60,7 +65,7 @@ export default async function AgreementPage({ searchParams }: PageProps<"/dashbo
               </section>
             ))}
           </div>
-          {signed ? (
+          {signed && !outdated ? (
             <div className="mt-10 grid gap-6 border-t border-slate-200 pt-6 sm:grid-cols-2">
               <div>
                 <p className="text-xs text-slate-500">Signed by the Host</p>
@@ -80,7 +85,7 @@ export default async function AgreementPage({ searchParams }: PageProps<"/dashbo
             <div className="card p-5">
               <h2 className="font-semibold text-ink">Sign electronically</h2>
               <p className="mb-4 mt-1 text-sm text-slate-500">Your typed name, the time and your IP address are recorded as your signature.</p>
-              <AgreementSign name={session.userName} rate={rate} />
+              <AgreementSign name={session.userName} rate={rate} bank={hp.bankDetails} />
             </div>
           ) : (
             <div className="card p-5 text-sm text-slate-600 print:hidden">

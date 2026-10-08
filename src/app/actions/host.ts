@@ -8,11 +8,26 @@ import { Property, User } from "@/lib/models";
 import { getSession, requireUser } from "@/lib/session";
 import { EMAIL_RE, NG_PHONE } from "@/lib/format";
 import { AGREEMENT_VERSION } from "@/lib/agreement";
-import { DEFAULT_COMMISSION } from "@/lib/stay";
+import { DEFAULT_COMMISSION, PAYOUT_DAYS } from "@/lib/stay";
 import { adminEmail, apartmentEmail, sendMail } from "@/lib/mailer";
 import type { FormState } from "./public";
 
 const s = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
+
+/** Payout bank details from a form. `any` is false when every field was left blank. */
+function readBank(fd: FormData) {
+  const details = {
+    bankName: s(fd, "bankName"),
+    accountNumber: s(fd, "accountNumber").replace(/\D/g, ""),
+    accountName: s(fd, "accountName"),
+  };
+  const any = !!(details.bankName || details.accountNumber || details.accountName);
+  const error: Record<string, string> = {};
+  if (!details.bankName) error.bankName = "Enter your bank";
+  if (!/^\d{10}$/.test(details.accountNumber)) error.accountNumber = "Enter the 10-digit account number";
+  if (!details.accountName) error.accountName = "Enter the account name";
+  return { any, details, error: Object.keys(error).length ? error : null };
+}
 
 export async function registerHost(_prev: FormState, fd: FormData): Promise<FormState> {
   const errors: Record<string, string> = {};
@@ -31,6 +46,8 @@ export async function registerHost(_prev: FormState, fd: FormData): Promise<Form
   if (!city) errors.city = "Enter the city or area";
   if (units < 1) errors.units = "How many apartments will you list?";
   if (!fd.get("terms")) errors.terms = "Please accept the terms to continue";
+  const bank = readBank(fd);
+  if (bank.any && bank.error) Object.assign(errors, bank.error);
   if (Object.keys(errors).length) return { ok: false, message: "Please fix the highlighted fields.", errors };
 
   await connectDB();
@@ -54,6 +71,7 @@ export async function registerHost(_prev: FormState, fd: FormData): Promise<Form
       status: "pending",
       commissionRate: DEFAULT_COMMISSION,
       agreement: { status: "none" },
+      ...(bank.any ? { bankDetails: bank.details } : {}),
     },
     preferences: { emailInquiries: true, emailTransactions: true, weeklyNewsletter: false, marketingEmails: false },
   });
@@ -104,6 +122,9 @@ export async function acceptAgreement(_prev: FormState, fd: FormData): Promise<F
   if (signedName.toLowerCase().replace(/\s+/g, " ") !== user.name.toLowerCase().replace(/\s+/g, " "))
     return { ok: false, message: `Type your full name exactly as on your account (${user.name}) to sign.`, errors: { signedName: "Name doesn't match" } };
   if (!fd.get("agree")) return { ok: false, message: "Tick the box to confirm you agree.", errors: { agree: "Required" } };
+  const bank = readBank(fd);
+  if (bank.error) return { ok: false, message: "Add the bank account Found should send your payouts to.", errors: bank.error };
+  user.hostProfile.bankDetails = bank.details;
 
   const h = await headers();
   const rate = user.hostProfile.commissionRate ?? DEFAULT_COMMISSION;
@@ -124,7 +145,7 @@ export async function acceptAgreement(_prev: FormState, fd: FormData): Promise<F
     `Listing agreement signed: ${user.name}`,
     apartmentEmail({
       heading: "A host signed the listing agreement",
-      intro: `${user.name} accepted the Found Apartments listing agreement at ${rate}% commission. Their pending apartments are ready for review.`,
+      intro: `${user.name} accepted the Found Apartments listing agreement (version ${AGREEMENT_VERSION}) at ${rate}% commission. Payouts go to ${bank.details.bankName} ${bank.details.accountNumber} (${bank.details.accountName}). Their pending apartments are ready for review.`,
       cta: { label: "Review apartments", href: "/dashboard/approvals" },
     }),
   );
@@ -161,8 +182,11 @@ export async function reviewHost(id: string, decision: "approved" | "rejected" |
       "You're approved — sign your Found Apartments agreement",
       apartmentEmail({
         heading: "Your host account is approved",
-        intro: `Good news, ${host.name.split(" ")[0]}! You've been vetted as a Found Apartments host. Please review and sign the listing agreement so your apartments can go live.`,
-        rows: [["Found's commission", `${rate}% of each booking`]],
+        intro: `Good news, ${host.name.split(" ")[0]}! You've been vetted as a Found Apartments host. Please review and sign the listing agreement, and add the bank account for your payouts, so your apartments can go live.`,
+        rows: [
+          ["Found's commission", `${rate}% of the accommodation total`],
+          ["How you're paid", `Guests pay Found; Found sends you the rest within ${PAYOUT_DAYS} working days of check-in`],
+        ],
         note: opts.note,
         cta: { label: "Review & sign agreement", href: "/dashboard/agreement" },
       }),

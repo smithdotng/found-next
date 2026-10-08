@@ -176,6 +176,8 @@ export interface BookingDoc {
   confirmedAt?: string;
   cancellation?: { cancelledAt?: string; reason?: string; byGuest?: boolean };
   commission?: { rate?: number; amount?: number; status?: "not_due" | "due" | "paid" | "waived"; paidAt?: string; reference?: string };
+  payout?: { amount?: number; status?: "not_due" | "due" | "paid" | "on_hold"; dueAt?: string; paidAt?: string; reference?: string };
+  caution?: { status?: "held" | "refunded" | "partly_refunded" | "not_paid"; refundedAmount?: number; refundedAt?: string; note?: string };
   history?: { status: string; at: string; by?: string; note?: string }[];
   accessToken?: string;
   createdAt: string;

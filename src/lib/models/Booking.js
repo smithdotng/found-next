@@ -66,6 +66,22 @@ const bookingSchema = new mongoose.Schema({
         paidAt: Date,
         reference: String
     },
+    // What Found remits to the host: accommodation total less commission. VAT and the
+    // caution fee stay with Found (VAT is remitted to the tax authority; caution is refunded).
+    payout: {
+        amount: Number,
+        status: { type: String, enum: ['not_due', 'due', 'paid', 'on_hold'], default: 'not_due' },
+        dueAt: Date,
+        paidAt: Date,
+        reference: String
+    },
+    // Refundable caution fee, held by Found until after check-out
+    caution: {
+        status: { type: String, enum: ['held', 'refunded', 'partly_refunded', 'not_paid'], default: 'not_paid' },
+        refundedAmount: Number,
+        refundedAt: Date,
+        note: String
+    },
     history: [{
         status: String,
         at: { type: Date, default: Date.now },

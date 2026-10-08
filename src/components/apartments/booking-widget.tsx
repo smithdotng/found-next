@@ -169,7 +169,7 @@ export function BookingWidget({
       </div>
       <p className="mt-3 flex items-start gap-2 text-xs leading-5 text-slate-500">
         <ShieldCheck className="mt-0.5 size-4 shrink-0 text-emerald-600" />
-        You won&apos;t pay anything now. The host confirms your dates, then contacts you to arrange payment. Only pay once your booking shows as confirmed.
+        You won&apos;t pay anything now. Once the host accepts your dates, you pay Found securely by bank transfer. Never pay a host directly.
       </p>
     </form>
   );

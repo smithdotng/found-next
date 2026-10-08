@@ -328,12 +328,13 @@ async function ApartmentsSnapshot() {
         <h2 className="flex items-center gap-2 font-semibold text-ink"><KeyRound className="size-4 text-coral-500" /> Found Apartments</h2>
         <Link href="/apartments" target="_blank" className="text-sm font-medium text-brand-600 hover:underline">View site</Link>
       </div>
-      <div className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-5">
+      <div className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3 lg:grid-cols-6">
         <Mini href="/dashboard/hosts?status=pending" label="Hosts to vet" value={s.hostsPending} alert={s.hostsPending > 0} />
         <Mini href="/dashboard/hosts?status=unsigned" label="Awaiting signature" value={s.unsigned} />
         <Mini href="/dashboard/bookings?tab=requests" label="Open requests" value={s.requests} alert={s.requests > 0} />
         <Mini href="/dashboard/bookings?tab=upcoming" label="Upcoming stays" value={s.upcoming} />
-        <Mini href="/dashboard/bookings?tab=all&commission=due" label="Commission due" value={formatCompactPrice(s.commissionDue)} />
+        <Mini href="/dashboard/bookings?tab=all&payment=awaiting" label="Awaiting guest payment" value={s.awaitingPayment} alert={s.awaitingPayment > 0} />
+        <Mini href="/dashboard/bookings?tab=all&payout=due" label="Payouts due to hosts" value={formatCompactPrice(s.payoutDue)} />
       </div>
     </section>
   );

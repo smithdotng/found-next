@@ -49,12 +49,14 @@ export async function expireStaleRequests() {
   );
 }
 
-export async function getManagedBookings(session: AuthedSession, f: { tab?: string; q?: string; property?: string; commission?: string; page?: string }) {
+export async function getManagedBookings(session: AuthedSession, f: { tab?: string; q?: string; property?: string; commission?: string; payout?: string; payment?: string; page?: string }) {
   await expireStaleRequests();
   const base = await scope(session);
   const query: Record<string, unknown> = { ...base, ...tabQuery(f.tab ?? "requests") };
   if (f.property && /^[a-f0-9]{24}$/i.test(f.property)) query.property = oid(f.property);
   if (f.commission && session.userType === "admin") query["commission.status"] = f.commission;
+  if (f.payout && ["not_due", "due", "paid", "on_hold"].includes(f.payout)) query["payout.status"] = f.payout;
+  if (f.payment === "awaiting") Object.assign(query, { status: "confirmed", "payment.status": { $ne: "paid" } });
   if (f.q) {
     const rx = new RegExp(escapeRegex(f.q), "i");
     query.$and = [{ $or: [{ "guest.name": rx }, { "guest.email": rx }, { "guest.phone": rx }, { bookingReference: rx }, { propertyTitle: rx }] }];
@@ -95,7 +97,24 @@ export async function getCommissionSummary(session: AuthedSession) {
     { $match: { ...base, status: { $in: ["confirmed", "checked_in", "checked_out"] } } },
     { $group: { _id: null, total: { $sum: "$pricing.total" }, nights: { $sum: "$dates.nights" }, count: { $sum: 1 } } },
   ]);
+  // Money held and owed: guest payments awaited, payouts to hosts, VAT collected.
+  const [payouts, awaiting, vat] = await Promise.all([
+    Booking.aggregate([
+      { $match: { ...base, "payment.status": "paid", "payout.amount": { $gt: 0 } } },
+      { $group: { _id: "$payout.status", amount: { $sum: "$payout.amount" }, count: { $sum: 1 } } },
+    ]),
+    Booking.find({ ...base, status: "confirmed", "payment.status": { $ne: "paid" } }).select("pricing.total pricing.securityDeposit").lean<{ pricing: { total: number; securityDeposit?: number } }[]>(),
+    Booking.find({ ...base, "payment.status": "paid" }).select("pricing.vat").lean<{ pricing: { vat?: number } }[]>(),
+  ]);
+  const po = Object.fromEntries(payouts.map((r: { _id: string; amount: number; count: number }) => [r._id, r]));
   return {
+    awaitingPayment: awaiting.reduce((t, x) => t + (x.pricing.total ?? 0) + (x.pricing.securityDeposit ?? 0), 0),
+    awaitingCount: awaiting.length,
+    payoutDue: (po.due?.amount ?? 0) + (po.on_hold?.amount ?? 0),
+    payoutDueCount: (po.due?.count ?? 0) + (po.on_hold?.count ?? 0),
+    payoutPaid: po.paid?.amount ?? 0,
+    payoutUpcoming: po.not_due?.amount ?? 0,
+    vatCollected: vat.reduce((t, x) => t + (x.pricing.vat ?? 0), 0),
     due: m.due?.amount ?? 0,
     dueCount: m.due?.count ?? 0,
     paid: m.paid?.amount ?? 0,
@@ -176,7 +195,7 @@ export async function getHosts(f: { status?: string; q?: string }) {
   const [listings, bookingCounts, dueSums, counts] = await Promise.all([
     Property.aggregate([{ $match: { owner: { $in: ids } } }, { $group: { _id: { owner: "$owner", status: "$status" }, count: { $sum: 1 } } }]),
     Booking.aggregate([{ $match: { host: { $in: ids } } }, { $group: { _id: "$host", count: { $sum: 1 } } }]),
-    Booking.aggregate([{ $match: { host: { $in: ids }, "commission.status": "due" } }, { $group: { _id: "$host", due: { $sum: "$commission.amount" } } }]),
+    Booking.aggregate([{ $match: { host: { $in: ids }, "payout.status": { $in: ["due", "on_hold"] } } }, { $group: { _id: "$host", due: { $sum: "$payout.amount" } } }]),
     User.aggregate([{ $match: { userType: "host" } }, { $group: { _id: "$hostProfile.status", count: { $sum: 1 } } }]),
   ]);
   const dueMap = Object.fromEntries((dueSums as { _id: Types.ObjectId; due: number }[]).map((d) => [String(d._id), d.due]));
@@ -190,7 +209,7 @@ export async function getHosts(f: { status?: string; q?: string }) {
   const cmap = Object.fromEntries((counts as { _id: string; count: number }[]).map((c) => [c._id, c.count]));
   const unsigned = await User.countDocuments({ userType: "host", "hostProfile.status": "approved", "hostProfile.agreement.status": { $ne: "accepted" } });
   return {
-    hosts: hosts.map((h) => ({ ...h, listings: lmap[h._id] ?? {}, bookings: bmap[h._id]?.count ?? 0, commissionDue: bmap[h._id]?.due ?? 0 })),
+    hosts: hosts.map((h) => ({ ...h, listings: lmap[h._id] ?? {}, bookings: bmap[h._id]?.count ?? 0, payoutDue: bmap[h._id]?.due ?? 0 })),
     counts: { pending: cmap.pending ?? 0, approved: cmap.approved ?? 0, rejected: cmap.rejected ?? 0, unsigned, all: Object.values(cmap).reduce((a, b) => a + b, 0) },
   };
 }
@@ -198,12 +217,13 @@ export async function getHosts(f: { status?: string; q?: string }) {
 export async function getApartmentsAdminSnapshot() {
   await connectDB();
   const today = todayLagos();
-  const [hostsPending, unsigned, requests, upcoming, due] = await Promise.all([
+  const [hostsPending, unsigned, requests, upcoming, due, awaiting] = await Promise.all([
     User.countDocuments({ userType: "host", "hostProfile.status": "pending" }),
     User.countDocuments({ userType: "host", "hostProfile.status": "approved", "hostProfile.agreement.status": { $ne: "accepted" } }),
     Booking.countDocuments({ status: "pending" }),
     Booking.countDocuments({ status: "confirmed", "dates.checkIn": { $gte: today } }),
-    Booking.aggregate([{ $match: { "commission.status": "due" } }, { $group: { _id: null, amount: { $sum: "$commission.amount" } } }]),
+    Booking.aggregate([{ $match: { "payout.status": { $in: ["due", "on_hold"] } } }, { $group: { _id: null, amount: { $sum: "$payout.amount" } } }]),
+    Booking.countDocuments({ status: "confirmed", "payment.status": { $ne: "paid" } }),
   ]);
-  return { hostsPending, unsigned, requests, upcoming, commissionDue: due[0]?.amount ?? 0 };
+  return { hostsPending, unsigned, requests, upcoming, payoutDue: due[0]?.amount ?? 0, awaitingPayment: awaiting };
 }

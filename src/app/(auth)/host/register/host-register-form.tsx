@@ -67,13 +67,23 @@ export function HostRegisterForm() {
         </div>
       </fieldset>
 
+      <fieldset className="space-y-4">
+        <legend className="text-sm font-semibold text-ink">Payout account <span className="font-normal text-slate-500">(optional now, needed before your first payout)</span></legend>
+        <p className="text-sm text-slate-500">Guests pay Found. After each check-in, Found sends your earnings to this account.</p>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <TextField label="Bank" name="bankName" placeholder="e.g. Zenith Bank" error={e("bankName")} />
+          <TextField label="Account number" name="accountNumber" inputMode="numeric" maxLength={10} placeholder="10 digits" error={e("accountNumber")} />
+          <TextField label="Account name" name="accountName" error={e("accountName")} />
+        </div>
+      </fieldset>
+
       <div className="space-y-2 text-sm text-slate-600">
         <label className="flex items-start gap-2">
           <input type="checkbox" name="terms" className="mt-0.5 size-4 rounded accent-brand-600" />
           <span>
             I agree to the <Link href="/terms" target="_blank" className="font-medium text-brand-600 hover:underline">Terms of use</Link> and{" "}
-            <Link href="/privacy-policy" target="_blank" className="font-medium text-brand-600 hover:underline">Privacy policy</Link>, and understand Found charges a commission on
-            bookings, set out in the host agreement I&apos;ll sign after vetting.
+            <Link href="/privacy-policy" target="_blank" className="font-medium text-brand-600 hover:underline">Privacy policy</Link>, and understand that guests pay Found, and Found
+            pays me my earnings less its commission and VAT, as set out in the host agreement I&apos;ll sign after vetting.
           </span>
         </label>
         {e("terms") ? <p className="text-xs text-rose-600">{e("terms")}</p> : null}

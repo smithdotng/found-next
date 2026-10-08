@@ -4,12 +4,12 @@ import Image from "next/image";
 import { ArrowRight, BadgeCheck, CalendarDays, ClipboardCheck, FileSignature, Inbox, LayoutDashboard, UserPlus } from "lucide-react";
 import { pageMetadata } from "@/lib/seo";
 import { formatPrice } from "@/lib/format";
-import { DEFAULT_COMMISSION, VAT_RATE, commissionFor } from "@/lib/stay";
+import { DEFAULT_COMMISSION, PAYOUT_DAYS, VAT_RATE, commissionFor } from "@/lib/stay";
 
 export const metadata: Metadata = pageMetadata({
   title: "Host on Found Apartments - List Your Shortlet Apartments",
   absoluteTitle: true,
-  description: `List your shortlet apartments on Found Apartments. Free to list, vetted hosts, live booking calendar and your own dashboard. Found earns ${DEFAULT_COMMISSION}% only on completed stays.`,
+  description: `List your shortlet apartments on Found Apartments. Free to list, vetted hosts, guest payments collected by Found and paid out to you after check-in. Found earns ${DEFAULT_COMMISSION}% only on completed stays.`,
   path: "/host",
   image: "/assets/images/og-apartments.jpg",
   keywords: "list shortlet apartment, become a host Nigeria, shortlet hosting Abuja, shortlet hosting Lagos, Found Apartments host",
@@ -24,10 +24,10 @@ export default function HostPage() {
     { icon: UserPlus, title: "Apply", text: "Create a host account and tell us about your apartments. It takes five minutes." },
     { icon: ClipboardCheck, title: "Get vetted", text: "We verify your ID and ownership or authority to let, and may inspect the apartment." },
     { icon: FileSignature, title: "Sign the agreement", text: `Review and sign the listing agreement online — ${DEFAULT_COMMISSION}% commission, no listing fees.` },
-    { icon: Inbox, title: "Accept bookings", text: "Guests request dates; you confirm, collect payment directly and welcome them in." },
+    { icon: Inbox, title: "Accept bookings, get paid", text: `Guests request dates and pay Found once you accept. You welcome them in, and Found sends your payout within ${PAYOUT_DAYS} working days of check-in.` },
   ];
   const perks = [
-    { icon: LayoutDashboard, title: "Your own host dashboard", text: "Requests, confirmed stays, payments and commission in one place." },
+    { icon: LayoutDashboard, title: "Your own host dashboard", text: "Requests, paid stays and every payout in one place." },
     { icon: CalendarDays, title: "Live availability calendar", text: "Confirmed stays block dates automatically. Close dates for your own use in a tap." },
     { icon: BadgeCheck, title: "A 'Vetted by Found' badge", text: "Guests book with confidence knowing we've checked you and your apartment." },
   ];
@@ -39,7 +39,7 @@ export default function HostPage() {
         <div className="container-page py-16 sm:py-24">
           <p className="text-sm font-semibold text-coral-200">Found Apartments for hosts</p>
           <h1 className="mt-3 max-w-2xl text-4xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-5xl">Fill your shortlet calendar with guests you can trust.</h1>
-          <p className="mt-4 max-w-xl text-lg text-white/80">Free to list. We vet every host, send you verified booking requests, and only earn when a guest actually stays.</p>
+          <p className="mt-4 max-w-xl text-lg text-white/80">Free to list. We vet every host, collect every guest payment for you, and only earn when a guest actually stays.</p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href="/host/register" className="btn-accent px-6 py-3 text-base">Apply to host <ArrowRight className="size-4" /></Link>
             <Link href="/login" className="btn bg-white/10 px-6 py-3 text-base text-white ring-1 ring-white/25 hover:bg-white/20">Host sign in</Link>
@@ -69,7 +69,7 @@ export default function HostPage() {
             <h2 className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">Simple, transparent pricing</h2>
             <p className="mt-3 text-slate-600">
               No sign-up fee and no listing fee. Found&apos;s commission is <strong className="text-ink">{DEFAULT_COMMISSION}% of the accommodation total</strong> of each stay booked through
-              Found Apartments — agreed in writing before you go live. The refundable caution fee is yours and isn&apos;t included.
+              Found Apartments, agreed in writing before you go live. Guests pay Found, so you never have to chase a payment or settle a commission bill: Found keeps its share and sends you the rest.
             </p>
             <ul className="mt-6 space-y-3">
               {perks.map((p) => (
@@ -85,11 +85,11 @@ export default function HostPage() {
             <dl className="mt-4 space-y-3 text-[15px]">
               <div className="flex justify-between"><dt className="text-slate-600">{formatPrice(EXAMPLE.nightly)} × {EXAMPLE.nights} nights</dt><dd className="font-medium">{formatPrice(total)}</dd></div>
               <div className="flex justify-between text-coral-600"><dt>Found commission ({DEFAULT_COMMISSION}%)</dt><dd>−{formatPrice(fee)}</dd></div>
-              <div className="flex justify-between border-t border-slate-200 pt-3 text-lg font-bold text-ink"><dt>You keep</dt><dd>{formatPrice(total - fee)}</dd></div>
+              <div className="flex justify-between border-t border-slate-200 pt-3 text-lg font-bold text-ink"><dt>Found pays you</dt><dd>{formatPrice(total - fee)}</dd></div>
             </dl>
             <p className="mt-4 text-xs text-slate-500">
-              The guest also pays {VAT_RATE}% VAT ({formatPrice(Math.round((total * VAT_RATE) / 100))} here), which you collect and remit — it isn&apos;t commissionable.
-              You collect payment from the guest directly; commission is settled with Found within 7 days of check-out.
+              The guest pays Found {formatPrice(total + Math.round((total * VAT_RATE) / 100))}: the stay plus {VAT_RATE}% VAT ({formatPrice(Math.round((total * VAT_RATE) / 100))}), which Found remits to the tax authority.
+              Found holds the refundable caution fee and refunds the guest after check-out, less any documented damage. Your payout reaches your bank within {PAYOUT_DAYS} working days of check-in.
             </p>
           </div>
         </div>

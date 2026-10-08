@@ -7,7 +7,8 @@ import { BlockedDate, Booking, Property, User } from "@/lib/models";
 import { requireUser, type AuthedSession } from "@/lib/session";
 import { EMAIL_RE, NG_PHONE, formatPrice } from "@/lib/format";
 import { isRangeFree } from "@/lib/apartments";
-import { DEFAULT_COMMISSION, commissionFor, nightsBetween, parseDay, quoteStay, stayDates, todayLagos } from "@/lib/stay";
+import { DEFAULT_COMMISSION, PAYOUT_DAYS, PAY_WITHIN_HOURS, commissionFor, nightsBetween, parseDay, quoteStay, splitBooking, stayDates, todayLagos } from "@/lib/stay";
+import { PAYMENT_ACCOUNT } from "@/lib/verification";
 import { adminEmail, apartmentEmail, sendMail } from "@/lib/mailer";
 import type { FormState } from "./public";
 
@@ -16,6 +17,32 @@ type Result = { ok: boolean; message: string };
 
 function guestLink(b: { bookingReference: string; accessToken: string }) {
   return `/apartments/booking/${b.bookingReference}?t=${b.accessToken}`;
+}
+
+/** The date `n` working days (Mon–Fri) after `from`. */
+function addWorkingDays(from: Date, n: number) {
+  const d = new Date(from);
+  let left = n;
+  while (left > 0) {
+    d.setUTCDate(d.getUTCDate() + 1);
+    const dow = d.getUTCDay();
+    if (dow !== 0 && dow !== 6) left--;
+  }
+  return d;
+}
+
+/** Bank details rows for the guest's payment to Found. */
+function payRows(b: { bookingReference: string; pricing: { total: number; securityDeposit?: number; vat?: number } }): [string, string][] {
+  const caution = b.pricing.securityDeposit ?? 0;
+  return [
+    [b.pricing.vat ? "Booking total (incl. VAT)" : "Booking total", formatPrice(b.pricing.total)],
+    ...(caution ? ([["Refundable caution fee", formatPrice(caution)]] as [string, string][]) : []),
+    ["Amount to pay", formatPrice(b.pricing.total + caution)],
+    ["Account name", PAYMENT_ACCOUNT.accountName],
+    ["Account number", PAYMENT_ACCOUNT.accountNumber],
+    ["Bank", PAYMENT_ACCOUNT.bank],
+    ["Narration / reference", b.bookingReference],
+  ];
 }
 
 /* ---------- Guest: request to book ---------- */
@@ -84,6 +111,8 @@ export async function requestBooking(_prev: FormState, fd: FormData): Promise<Fo
     status: "pending",
     specialRequests: s(fd, "message").slice(0, 1000),
     commission: rate != null ? { rate, amount: commissionFor(q.net, rate), status: "not_due" } : undefined,
+    payout: { amount: splitBooking(q, rate).hostPayout, status: "not_due" },
+    caution: { status: "not_paid" },
     history: [{ status: "pending", by: "guest", note: "Booking requested" }],
   });
 
@@ -99,8 +128,8 @@ export async function requestBooking(_prev: FormState, fd: FormData): Promise<Fo
     `New booking request — ${property.title}`,
     apartmentEmail({
       heading: "You have a new booking request",
-      intro: `${name} wants to stay at ${property.title}. Please accept or decline within 24 hours.`,
-      rows: [...rows, ["Guest phone", phone], ["Guest email", email]],
+      intro: `${name} wants to stay at ${property.title}. Please accept or decline within 24 hours. If you accept, the guest pays Found and we'll let you know as soon as the payment is in. Please don't collect payment from the guest yourself.`,
+      rows: [...rows, ["Your payout (after check-in)", formatPrice(splitBooking(q, rate).hostPayout)], ["Guest phone", phone], ["Guest email", email]],
       note: booking.specialRequests ? `Message from guest: ${booking.specialRequests}` : undefined,
       cta: { label: "Respond to request", href: `/dashboard/bookings?open=${booking._id}` },
     }),
@@ -110,7 +139,7 @@ export async function requestBooking(_prev: FormState, fd: FormData): Promise<Fo
     `Booking request received — ${booking.bookingReference}`,
     apartmentEmail({
       heading: "We've sent your request to the host",
-      intro: `Thanks, ${name.split(" ")[0]}. The host will confirm availability, usually within 24 hours, and contact you to arrange payment. Don't pay anyone before your booking shows as confirmed.`,
+      intro: `Thanks, ${name.split(" ")[0]}. The host will confirm availability, usually within 24 hours. As soon as they do, we'll email you Found's payment details. You only ever pay Found Projects & Realty Limited, never the host or anyone else.`,
       rows,
       cta: { label: "View your booking", href: guestLink(booking) },
     }),
@@ -126,24 +155,29 @@ export async function guestCancelBooking(reference: string, token: string, reaso
   if (!b) return { ok: false, message: "Booking not found" };
   if (!["pending", "confirmed"].includes(b.status)) return { ok: false, message: "This booking can no longer be cancelled online." };
   const wasConfirmed = b.status === "confirmed";
+  const paid = b.payment?.status === "paid";
   b.status = "cancelled";
   b.cancellation = { cancelledAt: new Date(), byGuest: true, reason: reason.slice(0, 500) };
   b.history.push({ status: "cancelled", by: "guest", note: reason.slice(0, 200) || undefined });
   if (b.commission) b.commission.status = "not_due";
+  // A paid booking's refund (and any payout on the non-refundable part) is settled by Found.
+  if (b.payout) b.payout.status = paid ? "on_hold" : "not_due";
   await b.save();
   if (b.host?.email)
     void sendMail(
       b.host.email,
       `Booking cancelled by guest — ${b.bookingReference}`,
       apartmentEmail({
-        heading: wasConfirmed ? "A guest cancelled a confirmed stay" : "A guest withdrew their request",
-        intro: `${b.guest.name} cancelled ${b.bookingReference} for ${b.propertyTitle} (${stayDates(b.dates.checkIn, b.dates.checkOut)}). The dates are open again.`,
+        heading: wasConfirmed ? "A guest cancelled an accepted stay" : "A guest withdrew their request",
+        intro: `${b.guest.name} cancelled ${b.bookingReference} for ${b.propertyTitle} (${stayDates(b.dates.checkIn, b.dates.checkOut)}). The dates are open again.${paid ? " Found will settle the guest's refund under your cancellation policy and pay you any non-refundable part, less commission." : ""}`,
         note: reason ? `Reason: ${reason}` : undefined,
         cta: { label: "View bookings", href: "/dashboard/bookings" },
       }),
     );
+  if (paid)
+    void sendMail(adminEmail(), `Paid booking cancelled by guest ${b.bookingReference}`, apartmentEmail({ heading: "A paid booking was cancelled: refund due", intro: `${b.guest.name} cancelled ${b.bookingReference} (${b.propertyTitle}). Work out the refund under the listing's cancellation policy, pay the guest and settle any payout to the host.`, note: reason ? `Reason: ${reason}` : undefined, cta: { label: "Open booking", href: `/dashboard/bookings?tab=all&open=${b._id}` } }));
   revalidatePath(`/apartments/booking/${reference}`);
-  return { ok: true, message: "Your booking has been cancelled." };
+  return { ok: true, message: paid ? "Your booking has been cancelled. Found will be in touch about your refund." : "Your booking has been cancelled." };
 }
 
 /* ---------- Host / admin: manage bookings ---------- */
@@ -183,19 +217,23 @@ export async function respondToBooking(id: string, decision: "confirm" | "declin
   if (decision === "confirm") {
     void sendMail(
       b.guest.email,
-      `Booking confirmed — ${b.propertyTitle}`,
+      `Host accepted: pay to secure your stay (${b.bookingReference})`,
       apartmentEmail({
-        heading: "Your stay is confirmed",
-        intro: `Great news, ${b.guest.name.split(" ")[0]}! The host has confirmed your stay. They'll contact you to arrange payment — pay only to the details the host provides, and keep your booking reference.`,
-        rows: [
-          ["Apartment", b.propertyTitle],
-          ["Dates", stayDates(b.dates.checkIn, b.dates.checkOut)],
-          [b.pricing.vat ? "Total (incl. VAT)" : "Total", formatPrice(b.pricing.total)],
-          ["Reference", b.bookingReference],
-          ...(host?.phone ? ([["Host phone", host.phone]] as [string, string][]) : []),
-        ],
-        note: b.hostNote ? `Message from your host: ${b.hostNote}` : undefined,
+        heading: "The host accepted. Pay Found to secure your stay",
+        intro: `Great news, ${b.guest.name.split(" ")[0]}! The host has accepted your dates at ${b.propertyTitle} (${stayDates(b.dates.checkIn, b.dates.checkOut)}). To secure your stay, please transfer the amount below to Found within ${PAY_WITHIN_HOURS} hours, using your booking reference as the narration. Your stay is confirmed as soon as we receive it.`,
+        rows: payRows(b),
+        note: `Only pay Found Projects & Realty Limited at the account above. Never pay the host or anyone else directly.${b.pricing.securityDeposit ? " The caution fee is refunded after check-out, less any documented damage." : ""}${b.hostNote ? ` Message from your host: ${b.hostNote}` : ""}`,
         cta: { label: "View booking", href: link },
+      }),
+    );
+    void sendMail(
+      adminEmail(),
+      `Awaiting guest payment ${b.bookingReference}`,
+      apartmentEmail({
+        heading: "Host accepted a booking: watch for the guest's payment",
+        intro: `${host?.name ?? "The host"} accepted ${b.guest.name}'s request for ${b.propertyTitle}. Confirm the transfer on the dashboard when it lands.`,
+        rows: payRows(b).slice(0, 3).concat([["Reference", b.bookingReference]] as [string, string][]),
+        cta: { label: "Open booking", href: `/dashboard/bookings?tab=all&open=${b._id}` },
       }),
     );
   } else {
@@ -211,7 +249,7 @@ export async function respondToBooking(id: string, decision: "confirm" | "declin
     );
   }
   revalidatePath("/dashboard", "layout");
-  return { ok: true, message: decision === "confirm" ? "Booking confirmed — the guest has been emailed" : "Request declined — the guest has been emailed" };
+  return { ok: true, message: decision === "confirm" ? "Accepted. The guest has been sent Found's payment details" : "Request declined. The guest has been emailed" };
 }
 
 const NEXT_STATUS: Record<string, string[]> = {
@@ -225,40 +263,164 @@ export async function updateBookingStatus(id: string, status: "checked_in" | "ch
   const b = await loadManaged(session, id);
   if (!b) return { ok: false, message: "Booking not found" };
   if (!NEXT_STATUS[b.status]?.includes(status)) return { ok: false, message: "That change isn't possible for this booking." };
+  const paid = b.payment?.status === "paid";
+  if (status === "checked_in" && !paid && session.userType !== "admin")
+    return { ok: false, message: "Found hasn't received this guest's payment yet. Please don't check them in until it shows as paid." };
   b.status = status;
   if (status === "cancelled") b.cancellation = { cancelledAt: new Date(), cancelledBy: session.userId, reason: note.slice(0, 500) };
-  // Commission falls due once the guest actually stays.
-  if (b.commission && (status === "checked_in" || status === "checked_out") && b.commission.status === "not_due") b.commission.status = "due";
-  if (b.commission && (status === "cancelled" || status === "no_show") && b.commission.status !== "paid") b.commission.status = "not_due";
+  if (status === "checked_in" && paid) {
+    // The stay has started: Found keeps its commission and the host's payout falls due.
+    if (b.commission && b.commission.status === "not_due") b.commission.status = "due";
+    if (b.payout && b.payout.status !== "paid") {
+      b.payout.status = "due";
+      b.payout.dueAt = addWorkingDays(todayLagos(), PAYOUT_DAYS);
+    }
+  }
+  if (status === "cancelled" || status === "no_show") {
+    if (b.commission && b.commission.status !== "paid") b.commission.status = "not_due";
+    // Paid bookings: Found decides the refund / payout split under the cancellation policy.
+    if (b.payout && b.payout.status !== "paid") b.payout.status = paid ? "on_hold" : "not_due";
+  }
   b.history.push({ status, by: session.userType === "admin" ? "admin" : "host", note: note.slice(0, 200) || undefined });
   await b.save();
-  if (status === "cancelled")
+  if (status === "cancelled") {
     void sendMail(
       b.guest.email,
       `Booking cancelled — ${b.propertyTitle}`,
       apartmentEmail({
         heading: "Your booking was cancelled",
-        intro: `Your stay at ${b.propertyTitle} (${stayDates(b.dates.checkIn, b.dates.checkOut)}) was cancelled by the host. If you've paid, the host will arrange your refund. Contact hello@found.ng if you need help.`,
+        intro: `Your stay at ${b.propertyTitle} (${stayDates(b.dates.checkIn, b.dates.checkOut)}) was cancelled by the host. ${paid ? "Found will refund your payment in full, and we can help you find another apartment." : "You haven't been charged."} Contact hello@found.ng if you need help.`,
         note: note ? `Note: ${note}` : undefined,
         cta: { label: "Find another apartment", href: "/apartments" },
       }),
     );
+    if (paid) void sendMail(adminEmail(), `Host cancelled a paid booking ${b.bookingReference}`, apartmentEmail({ heading: "Refund due: host cancelled a paid booking", intro: `The host cancelled ${b.bookingReference} (${b.propertyTitle}). Refund ${b.guest.name} in full.`, note: note ? `Host's reason: ${note}` : undefined, cta: { label: "Open booking", href: `/dashboard/bookings?tab=all&open=${b._id}` } }));
+  }
+  if (status === "checked_in" && paid && b.payout?.amount)
+    void sendMail(adminEmail(), `Host payout due ${b.bookingReference}`, apartmentEmail({ heading: "A host payout is now due", intro: `${b.guest.name} has checked in to ${b.propertyTitle}. Remit ${formatPrice(b.payout.amount)} to the host by ${b.payout.dueAt ? b.payout.dueAt.toDateString() : "the due date"}.`, cta: { label: "Record payout", href: `/dashboard/bookings?tab=all&open=${b._id}` } }));
   revalidatePath("/dashboard", "layout");
   const label: Record<string, string> = { checked_in: "Checked in", checked_out: "Stay completed", cancelled: "Booking cancelled", no_show: "Marked as no-show" };
   return { ok: true, message: label[status] };
 }
 
+/** Admin: confirm (or undo) that the guest's transfer to Found has landed. */
 export async function markBookingPaid(id: string, paid: boolean, reference = ""): Promise<Result> {
-  const session = await requireUser(["host", "realtor", "admin"]);
+  await requireUser(["admin"]);
   await connectDB();
-  const b = await loadManaged(session, id);
+  const b = await Booking.findById(id).populate("host", "name email phone hostProfile.businessName");
   if (!b) return { ok: false, message: "Booking not found" };
+  if (paid && !["confirmed", "checked_in"].includes(b.status)) return { ok: false, message: "Only accepted bookings can be marked as paid." };
+  b.payment.method = "bank_transfer";
   b.payment.status = paid ? "paid" : "pending";
   b.payment.paidAt = paid ? new Date() : undefined;
   b.payment.transactionReference = reference.slice(0, 120) || undefined;
+  if (!b.caution) b.caution = {};
+  b.caution.status = paid && b.pricing.securityDeposit ? "held" : "not_paid";
+  if (!b.payout) b.payout = { amount: splitBooking(b.pricing, b.commission?.rate).hostPayout, status: "not_due" };
+  b.history.push({ status: b.status, by: "admin", note: paid ? `Guest payment received by Found${reference ? ` (ref ${reference.slice(0, 60)})` : ""}` : "Guest payment unmarked" });
   await b.save();
+
+  if (paid) {
+    const host = b.host as { name?: string; email?: string; phone?: string; hostProfile?: { businessName?: string } } | null;
+    void sendMail(
+      b.guest.email,
+      `Payment received: your stay is confirmed (${b.bookingReference})`,
+      apartmentEmail({
+        heading: "Payment received. Your stay is confirmed",
+        intro: `Thank you, ${b.guest.name.split(" ")[0]}. Found has received your payment for ${b.propertyTitle} (${stayDates(b.dates.checkIn, b.dates.checkOut)}). Your host will be in touch with check-in details.`,
+        rows: [
+          ["Amount received", formatPrice(b.pricing.total + (b.pricing.securityDeposit ?? 0))],
+          ["Reference", b.bookingReference],
+          ...(host?.phone ? ([["Host phone", host.phone]] as [string, string][]) : []),
+        ],
+        cta: { label: "View booking", href: guestLink(b) },
+      }),
+    );
+    if (host?.email)
+      void sendMail(
+        host.email,
+        `Guest has paid: ${b.bookingReference}`,
+        apartmentEmail({
+          heading: "Found has received the guest's payment",
+          intro: `${b.guest.name}'s stay at ${b.propertyTitle} (${stayDates(b.dates.checkIn, b.dates.checkOut)}) is paid and secured. Please get in touch with check-in details, and mark the guest as checked in on arrival. We'll remit your payout within ${PAYOUT_DAYS} working days of check-in.`,
+          rows: [
+            ["Guest", `${b.guest.name} · ${b.guest.phone}`],
+            ["Your payout", formatPrice(b.payout?.amount ?? 0)],
+            ["Reference", b.bookingReference],
+          ],
+          cta: { label: "Open booking", href: `/dashboard/bookings?open=${b._id}` },
+        }),
+      );
+  }
   revalidatePath("/dashboard", "layout");
-  return { ok: true, message: paid ? "Marked as paid by guest" : "Marked as unpaid" };
+  revalidatePath(`/apartments/booking/${b.bookingReference}`);
+  return { ok: true, message: paid ? "Payment recorded. The guest and host have been emailed" : "Marked as unpaid" };
+}
+
+/** Admin: record the payout remitted to the host (or put it on hold). */
+export async function setPayoutStatus(id: string, status: "due" | "paid" | "on_hold" | "not_due", reference = "", amount?: number): Promise<Result> {
+  await requireUser(["admin"]);
+  await connectDB();
+  const b = await Booking.findById(id).populate("host", "name email hostProfile.bankDetails");
+  if (!b) return { ok: false, message: "Booking not found" };
+  if (!b.payout) b.payout = { amount: splitBooking(b.pricing, b.commission?.rate).hostPayout };
+  if (amount != null && Number.isFinite(amount) && amount >= 0) b.payout.amount = Math.round(amount);
+  b.payout.status = status;
+  b.payout.paidAt = status === "paid" ? new Date() : undefined;
+  if (reference) b.payout.reference = reference.slice(0, 120);
+  // Found's commission is kept from the guest's payment when the payout goes out.
+  if (b.commission && status === "paid") {
+    b.commission.status = "paid";
+    b.commission.paidAt = new Date();
+  }
+  b.history.push({ status: b.status, by: "admin", note: status === "paid" ? `Payout of ${formatPrice(b.payout.amount ?? 0)} sent to host${reference ? ` (ref ${reference.slice(0, 60)})` : ""}` : `Payout ${status.replace("_", " ")}` });
+  await b.save();
+  const host = b.host as { name?: string; email?: string } | null;
+  if (status === "paid" && host?.email) {
+    const split = splitBooking(b.pricing, b.commission?.rate);
+    void sendMail(
+      host.email,
+      `Payout sent: ${b.bookingReference}`,
+      apartmentEmail({
+        heading: "We've sent your payout",
+        intro: `Found has remitted your payout for ${b.guest.name}'s stay at ${b.propertyTitle} (${stayDates(b.dates.checkIn, b.dates.checkOut)}).`,
+        rows: [
+          ["Accommodation total", formatPrice(split.net)],
+          [`Found commission (${b.commission?.rate ?? 0}%)`, `−${formatPrice(split.commission)}`],
+          ...(split.vat ? ([["VAT (collected and remitted by Found)", formatPrice(split.vat)]] as [string, string][]) : []),
+          ["Payout sent", formatPrice(b.payout.amount ?? 0)],
+          ...(reference ? ([["Transfer reference", reference]] as [string, string][]) : []),
+        ],
+        cta: { label: "View booking", href: `/dashboard/bookings?tab=all&open=${b._id}` },
+      }),
+    );
+  }
+  revalidatePath("/dashboard", "layout");
+  return { ok: true, message: status === "paid" ? "Payout recorded. The host has been emailed" : `Payout marked ${status.replace("_", " ")}` };
+}
+
+/** Admin: record what happened to the guest's caution fee after check-out. */
+export async function settleCaution(id: string, refundedAmount: number, note = ""): Promise<Result> {
+  await requireUser(["admin"]);
+  await connectDB();
+  const b = await Booking.findById(id);
+  if (!b) return { ok: false, message: "Booking not found" };
+  const deposit = b.pricing.securityDeposit ?? 0;
+  const refund = Math.max(0, Math.min(deposit, Math.round(refundedAmount)));
+  b.caution = { status: refund >= deposit ? "refunded" : "partly_refunded", refundedAmount: refund, refundedAt: new Date(), note: note.slice(0, 300) || undefined };
+  b.history.push({ status: b.status, by: "admin", note: `Caution fee: ${formatPrice(refund)} refunded to guest${deposit - refund > 0 ? `, ${formatPrice(deposit - refund)} kept for damage` : ""}` });
+  await b.save();
+  void sendMail(
+    b.guest.email,
+    `Caution fee refund — ${b.bookingReference}`,
+    apartmentEmail({
+      heading: "Your caution fee has been refunded",
+      intro: `We've refunded ${formatPrice(refund)} of your ${formatPrice(deposit)} caution fee for ${b.propertyTitle}.${deposit - refund > 0 ? ` ${formatPrice(deposit - refund)} was kept for documented damage.` : ""} Thanks for staying with Found Apartments.`,
+      note: note || undefined,
+    }),
+  );
+  revalidatePath("/dashboard", "layout");
+  return { ok: true, message: "Caution fee settled. The guest has been emailed" };
 }
 
 export async function setCommissionStatus(id: string, status: "due" | "paid" | "waived" | "not_due", reference = ""): Promise<Result> {

@@ -94,8 +94,8 @@ export default async function HostsPage({ searchParams }: PageProps<"/dashboard/
                       </div>
                       <div className="rounded-xl bg-slate-50 p-2">
                         <KeyRound className="mx-auto size-4 text-slate-400" />
-                        <span className="mt-1 block text-base font-bold text-ink">{formatPrice(h.commissionDue)}</span>
-                        due
+                        <span className="mt-1 block text-base font-bold text-ink">{formatPrice(h.payoutDue)}</span>
+                        payout due
                       </div>
                     </div>
                     <HostReview id={h._id} status={hp.status} rate={hp.commissionRate ?? DEFAULT_COMMISSION} />

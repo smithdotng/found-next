@@ -3,7 +3,7 @@ import { CopyButton } from "@/components/ui/copy-button";
 import { PAYMENT_ACCOUNT } from "@/lib/verification";
 
 /** Bank details for verification payments, with copy buttons. */
-export function PaymentAccount({ compact = false }: { compact?: boolean }) {
+export function PaymentAccount({ compact = false, narration }: { compact?: boolean; narration?: string }) {
   const rows = [
     { label: "Account name", value: PAYMENT_ACCOUNT.accountName },
     { label: "Account number", value: PAYMENT_ACCOUNT.accountNumber, mono: true },
@@ -17,7 +17,7 @@ export function PaymentAccount({ compact = false }: { compact?: boolean }) {
         </span>
         <div>
           <p className="font-semibold text-ink">Pay by bank transfer</p>
-          <p className="text-xs text-slate-500">Use your name or company name as the narration.</p>
+          <p className="text-xs text-slate-500">{narration ? <>Use <strong>{narration}</strong> as the narration.</> : "Use your name or company name as the narration."}</p>
         </div>
       </div>
       <dl className="mt-4 divide-y divide-slate-200/80">

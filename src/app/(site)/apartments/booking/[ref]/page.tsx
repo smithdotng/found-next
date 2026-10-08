@@ -9,7 +9,8 @@ import { SmartImage } from "@/components/ui/smart-image";
 import { expireStaleRequests } from "@/lib/bookings-data";
 import { GuestCancel } from "@/components/apartments/guest-cancel";
 import { formatDate, formatPrice, locationLine, primaryImage } from "@/lib/format";
-import { BOOKING_STATUS, stayDates } from "@/lib/stay";
+import { PAY_WITHIN_HOURS, bookingStatusMeta, stayDates } from "@/lib/stay";
+import { PaymentAccount } from "@/components/site/payment-account";
 import { pageMetadata } from "@/lib/seo";
 import type { BookingDoc, PropertyDoc } from "@/lib/types";
 
@@ -28,14 +29,17 @@ export default async function BookingStatusPage({ params, searchParams }: PagePr
     .lean();
   if (!doc) notFound();
   const b = toPlain<Full>(doc);
-  const st = BOOKING_STATUS[b.status] ?? BOOKING_STATUS.pending;
+  const st = bookingStatusMeta(b);
   const confirmed = ["confirmed", "checked_in", "checked_out"].includes(b.status);
   const hostLabel = b.host?.hostProfile?.businessName || b.host?.name || "your host";
+  const paid = b.payment?.status === "paid";
+  const caution = b.pricing.securityDeposit ?? 0;
+  const amountDue = b.pricing.total + caution;
 
   const steps = [
     { label: "Request sent", done: true, at: b.createdAt },
-    { label: "Host confirms", done: confirmed, at: b.confirmedAt, failed: b.status === "declined" || b.status === "expired" },
-    { label: "Pay the host", done: b.payment?.status === "paid", at: b.payment?.paidAt },
+    { label: "Host accepts", done: confirmed, at: b.confirmedAt, failed: b.status === "declined" || b.status === "expired" },
+    { label: "Pay Found", done: paid, at: b.payment?.paidAt },
     { label: "Check in", done: ["checked_in", "checked_out"].includes(b.status), at: undefined },
   ];
 
@@ -43,13 +47,15 @@ export default async function BookingStatusPage({ params, searchParams }: PagePr
     <div className="container-page max-w-3xl py-10 sm:py-14">
       <p className="text-sm font-semibold text-coral-500">Found Apartments · {b.bookingReference}</p>
       <h1 className="mt-1 text-3xl font-bold tracking-tight text-ink">
-        {b.status === "pending" ? "Request sent — waiting for the host" : b.status === "confirmed" ? "Your stay is confirmed" : st.label}
+        {b.status === "pending" ? "Request sent — waiting for the host" : b.status === "confirmed" ? (paid ? "Your stay is confirmed" : "Accepted — pay to secure your stay") : st.label}
       </h1>
       <p className="mt-2 text-slate-600">
         {b.status === "pending"
           ? `We've emailed ${hostLabel}. Most hosts respond within 24 hours — we'll email you at ${b.guest.email} as soon as they do.`
           : b.status === "confirmed"
-            ? `${hostLabel} has confirmed your dates and will contact you to arrange payment. Only pay using details the host gives you directly, and quote your booking reference.`
+            ? paid
+              ? `Found has received your payment. ${hostLabel} will be in touch with check-in details.`
+              : `${hostLabel} has accepted your dates. Transfer ${formatPrice(amountDue)} to Found within ${PAY_WITHIN_HOURS} hours, using ${b.bookingReference} as the narration. Your stay is confirmed as soon as we receive it.`
             : b.status === "declined"
               ? "The host couldn't accept this request. Your dates weren't charged — try another apartment below."
               : b.status === "cancelled"
@@ -70,6 +76,18 @@ export default async function BookingStatusPage({ params, searchParams }: PagePr
           </li>
         ))}
       </ol>
+
+      {b.status === "confirmed" && !paid ? (
+        <div className="mt-8 grid gap-4 sm:grid-cols-[1fr_auto] sm:items-start">
+          <PaymentAccount compact narration={b.bookingReference} />
+          <div className="rounded-2xl bg-amber-50 p-4 text-sm text-amber-900 sm:max-w-64">
+            <p className="text-xs uppercase tracking-wide text-amber-700">Amount to pay</p>
+            <p className="text-2xl font-bold">{formatPrice(amountDue)}</p>
+            <p className="mt-1 text-xs">Narration: <strong>{b.bookingReference}</strong></p>
+            <p className="mt-2 text-xs">Only pay Found Projects &amp; Realty Limited. Never pay the host or anyone else directly.</p>
+          </div>
+        </div>
+      ) : null}
 
       <div className="card mt-8 overflow-hidden">
         {b.property ? (
@@ -95,10 +113,11 @@ export default async function BookingStatusPage({ params, searchParams }: PagePr
           {b.pricing.cleaningFee ? <div className="mt-1 flex justify-between text-slate-600"><span>Cleaning fee</span><span>{formatPrice(b.pricing.cleaningFee)}</span></div> : null}
           {b.pricing.vat ? <div className="mt-1 flex justify-between text-slate-600"><span>VAT ({b.pricing.vatRate}%)</span><span>{formatPrice(b.pricing.vat)}</span></div> : null}
           <div className="mt-2 flex justify-between border-t border-slate-100 pt-2 text-base font-bold text-ink"><span>Total{b.pricing.vat ? " (incl. VAT)" : ""}</span><span>{formatPrice(b.pricing.total)}</span></div>
-          {b.pricing.securityDeposit ? <p className="mt-1 text-xs text-slate-500">Plus refundable caution fee {formatPrice(b.pricing.securityDeposit)}</p> : null}
-          <p className="mt-2 text-xs text-slate-500">Payment: {b.payment?.status === "paid" ? "received by host" : "not yet paid"}</p>
+          {caution ? <div className="mt-1 flex justify-between text-slate-600"><span>Refundable caution fee</span><span>{formatPrice(caution)}</span></div> : null}
+          {caution ? <div className="mt-1 flex justify-between font-semibold text-ink"><span>Amount payable to Found</span><span>{formatPrice(amountDue)}</span></div> : null}
+          <p className="mt-2 text-xs text-slate-500">Payment: {paid ? "received by Found" : "not yet paid"}{caution ? ". The caution fee is refunded after check-out, less any documented damage." : ""}</p>
         </div>
-        {confirmed && b.host ? (
+        {confirmed && paid && b.host ? (
           <div className="flex flex-wrap gap-2 border-t border-slate-100 p-5">
             {b.host.phone ? <a href={`tel:${b.host.phone}`} className="btn-primary"><Phone className="size-4" /> Call host</a> : null}
             {b.host.phone ? <a href={`https://wa.me/${b.host.phone.replace(/^0/, "234").replace(/\D/g, "")}?text=${encodeURIComponent(`Hi, this is ${b.guest.name} about Found Apartments booking ${b.bookingReference}.`)}`} target="_blank" rel="noopener noreferrer" className="btn-outline">WhatsApp host</a> : null}

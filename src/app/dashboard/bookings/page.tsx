@@ -22,7 +22,7 @@ export default async function BookingsPage({ searchParams }: PageProps<"/dashboa
   const session = await requireUser(["host", "realtor", "admin"]);
   const sp = await searchParams;
   const pick = (k: string) => (typeof sp[k] === "string" ? (sp[k] as string) : undefined);
-  const f = { tab: pick("tab") ?? "requests", q: pick("q"), property: pick("property"), commission: pick("commission"), page: pick("page") };
+  const f = { tab: pick("tab") ?? "requests", q: pick("q"), property: pick("property"), commission: pick("commission"), payout: pick("payout"), payment: pick("payment"), page: pick("page") };
   const isAdmin = session.userType === "admin";
   const [data, summary] = await Promise.all([getManagedBookings(session, f), getCommissionSummary(session)]);
   const href = (patch: Record<string, string | undefined>) => {
@@ -36,13 +36,17 @@ export default async function BookingsPage({ searchParams }: PageProps<"/dashboa
     <>
       <PageHeader
         title={isAdmin ? "Found Apartments bookings" : "Bookings"}
-        description={isAdmin ? "Every booking request across hosts, with Found's commission." : "Answer requests quickly — guests are waiting on you to confirm their dates."}
+        description={isAdmin ? "Every booking across hosts: guest payments to Found, commission and payouts to hosts." : "Answer requests quickly. Guests pay Found, and Found remits your payout after check-in."}
       />
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="Booked value" value={formatPrice(summary.bookedValue)} hint={`${summary.bookedCount} stays · ${summary.bookedNights} nights`} icon={CalendarCheck} />
-        <StatCard label={isAdmin ? "Commission due" : "Commission due to Found"} value={formatPrice(summary.due)} hint={`${summary.dueCount} stay${summary.dueCount === 1 ? "" : "s"}`} tone="amber" href={isAdmin ? href({ tab: "all", commission: "due" }) : undefined} />
-        <StatCard label={isAdmin ? "Commission received" : "Commission paid"} value={formatPrice(summary.paid)} tone="emerald" href={isAdmin ? href({ tab: "all", commission: "paid" }) : undefined} />
-        <StatCard label="On upcoming stays" value={formatPrice(summary.upcoming)} hint="Falls due after check-in" tone="slate" />
+        <StatCard label="Awaiting guest payment" value={formatPrice(summary.awaitingPayment)} hint={`${summary.awaitingCount} accepted stay${summary.awaitingCount === 1 ? "" : "s"} · paid to Found`} tone="amber" href={href({ tab: "all", payment: "awaiting" })} />
+        <StatCard label={isAdmin ? "Payouts due to hosts" : "Payouts due to you"} value={formatPrice(summary.payoutDue)} hint={`${summary.payoutDueCount} stay${summary.payoutDueCount === 1 ? "" : "s"} · after check-in`} tone="coral" href={href({ tab: "all", payout: "due" })} />
+        {isAdmin ? (
+          <StatCard label="Commission kept" value={formatPrice(summary.paid)} hint={`VAT collected ${formatPrice(summary.vatCollected)}`} tone="emerald" href={href({ tab: "all", commission: "paid" })} />
+        ) : (
+          <StatCard label="Paid to you" value={formatPrice(summary.payoutPaid)} hint={summary.payoutUpcoming ? `${formatPrice(summary.payoutUpcoming)} more after upcoming check-ins` : "Payouts sent by Found"} tone="emerald" href={href({ tab: "all", payout: "paid" })} />
+        )}
       </div>
 
       <Tabs tabs={tabs} active={f.tab} />
@@ -56,6 +60,8 @@ export default async function BookingsPage({ searchParams }: PageProps<"/dashboa
         <button className="btn-outline">Search</button>
       </form>
       {f.commission ? <p className="mb-3 text-sm text-slate-600">Showing bookings with commission <strong>{f.commission}</strong>. <a href={href({ commission: undefined })} className="text-brand-600 hover:underline">Clear</a></p> : null}
+      {f.payout ? <p className="mb-3 text-sm text-slate-600">Showing bookings with payout <strong>{f.payout.replace("_", " ")}</strong>. <a href={href({ payout: undefined })} className="text-brand-600 hover:underline">Clear</a></p> : null}
+      {f.payment ? <p className="mb-3 text-sm text-slate-600">Showing accepted stays awaiting the guest&apos;s payment to Found. <a href={href({ payment: undefined })} className="text-brand-600 hover:underline">Clear</a></p> : null}
 
       {data.items.length ? (
         <>

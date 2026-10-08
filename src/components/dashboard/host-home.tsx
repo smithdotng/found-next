@@ -6,12 +6,14 @@ import { PageHeader, StatCard } from "@/components/dashboard/ui";
 import { SmartImage } from "@/components/ui/smart-image";
 import { formatPrice, primaryImage, timeAgo } from "@/lib/format";
 import { BOOKING_STATUS, stayDates } from "@/lib/stay";
+import { AGREEMENT_VERSION } from "@/lib/agreement";
 
 export async function HostHome({ name, userId, greeting }: { name: string; userId: string; greeting: string }) {
   const d = await getHostOverview(userId);
   const hp = d.hostProfile;
   const vetted = hp.status === "approved";
-  const signed = hp.agreement?.status === "accepted";
+  const signedAny = hp.agreement?.status === "accepted";
+  const signed = signedAny && hp.agreement?.version === AGREEMENT_VERSION;
   const steps = [
     { done: true, title: "Apply as a host", text: "Account created", href: undefined },
     {
@@ -20,7 +22,7 @@ export async function HostHome({ name, userId, greeting }: { name: string; userI
       text: hp.status === "rejected" ? hp.reviewNote || "We couldn't approve your account. Contact hello@found.ng." : vetted ? "Approved" : "We're reviewing your details — we may call to arrange an inspection.",
       failed: hp.status === "rejected",
     },
-    { done: signed, title: "Sign the listing agreement", text: signed ? `Signed at ${hp.agreement?.commissionRate ?? hp.commissionRate}% commission` : vetted ? "Ready for your signature" : "Available once you're vetted", href: vetted && !signed ? "/dashboard/agreement" : undefined },
+    { done: signed, title: "Sign the listing agreement", text: signed ? `Signed at ${hp.agreement?.commissionRate ?? hp.commissionRate}% commission` : signedAny ? "Updated terms: guests now pay Found. Please sign again" : vetted ? "Ready for your signature" : "Available once you're vetted", href: vetted && !signed ? "/dashboard/agreement" : undefined },
     { done: d.listings.live > 0, title: "Get your first apartment live", text: d.listings.live ? `${d.listings.live} live` : d.listings.total ? `${d.listings.pending} awaiting review` : "Add your first apartment", href: d.listings.total ? "/dashboard/listings" : "/dashboard/listings/new" },
   ];
   const onboarding = !(vetted && signed && d.listings.live > 0);
@@ -59,12 +61,12 @@ export async function HostHome({ name, userId, greeting }: { name: string; userI
         <StatCard label="Upcoming stays" value={d.upcoming.length} hint="Confirmed & in-house" icon={CalendarCheck} tone="emerald" href="/dashboard/bookings?tab=upcoming" />
         <StatCard label="Booked value" value={formatPrice(d.summary.bookedValue)} hint={`${d.summary.bookedNights} nights · ${d.summary.bookedCount} stays`} icon={Wallet} />
         <StatCard
-          label="Commission due to Found"
-          value={formatPrice(d.summary.due)}
-          hint={d.summary.dueCount ? `${d.summary.dueCount} stay${d.summary.dueCount > 1 ? "s" : ""} · pay within 7 days of check-out` : "Nothing due"}
+          label="Payouts due to you"
+          value={formatPrice(d.summary.payoutDue)}
+          hint={d.summary.payoutDueCount ? `${d.summary.payoutDueCount} stay${d.summary.payoutDueCount > 1 ? "s" : ""} · sent by Found after check-in` : d.summary.payoutPaid ? `${formatPrice(d.summary.payoutPaid)} paid so far` : "Nothing due yet"}
           icon={FileSignature}
           tone="amber"
-          href="/dashboard/bookings?tab=past"
+          href="/dashboard/bookings?tab=all&payout=due"
         />
       </div>
 

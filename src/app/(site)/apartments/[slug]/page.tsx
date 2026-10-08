@@ -138,7 +138,7 @@ export default async function ApartmentPage({ params, searchParams }: PageProps<
               <Highlight icon={BadgeCheck} title="Vetted by Found" text="This host has been reviewed by the Found team and signed our host agreement." />
             ) : null}
             <Highlight icon={DoorOpen} title={`Check-in from ${sl.checkInTime ?? "14:00"}`} text={`Check-out by ${sl.checkOutTime ?? "11:00"}. Minimum stay ${sl.minimumStay ?? 1} night${(sl.minimumStay ?? 1) > 1 ? "s" : ""}.`} />
-            <Highlight icon={ShieldCheck} title="Request first, pay after" text="Your dates are held once the host confirms. You then pay the host directly — never before confirmation." />
+            <Highlight icon={ShieldCheck} title="Request first, pay Found after" text="Your dates are held once the host accepts. You then pay Found, not the host, and your money is protected until you check in." />
           </ul>
 
           <section className="border-b border-slate-200 py-8">
