@@ -1,5 +1,7 @@
 "use client";
 
+import type { UserType } from "@/lib/types";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -14,7 +16,7 @@ export type UserRow = {
   name: string;
   email: string;
   phone: string;
-  userType: "realtor" | "agent" | "admin" | "host";
+  userType: UserType;
   isSuspended?: boolean;
   createdAt: string;
   listings: number;
@@ -28,6 +30,8 @@ const ROLE = {
   agent: "bg-coral-50 text-coral-700 ring-coral-600/20",
   admin: "bg-slate-100 text-slate-700 ring-slate-500/20",
   host: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
+  investor: "bg-amber-50 text-amber-800 ring-amber-600/20",
+  developer: "bg-violet-50 text-violet-700 ring-violet-600/20",
 };
 
 export function UsersTable({ rows, superAdmin, selfId }: { rows: UserRow[]; superAdmin: boolean; selfId: string }) {

@@ -37,7 +37,7 @@ export function apartmentEmail(opts: {
   note?: string;
   cta?: { label: string; href: string };
   /** Header wordmark; defaults to "Found Apartments". */
-  brand?: "apartments" | "found";
+  brand?: "apartments" | "found" | "fractional";
 }) {
   const base = siteUrl();
   const rows = (opts.rows ?? [])
@@ -47,7 +47,7 @@ export function apartmentEmail(opts: {
   return `<!doctype html><html><body style="margin:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:24px 12px"><tr><td align="center">
   <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#fff;border-radius:14px;overflow:hidden">
-    <tr><td style="background:#12334a;padding:20px 28px;color:#fff;font-size:18px;font-weight:700">${opts.brand === "found" ? `Found <span style="color:#f2a0a5">Projects &amp; Realty</span>` : `Found <span style="color:#f2a0a5">Apartments</span>`}</td></tr>
+    <tr><td style="background:#12334a;padding:20px 28px;color:#fff;font-size:18px;font-weight:700">${opts.brand === "found" ? `Found <span style="color:#f2a0a5">Projects &amp; Realty</span>` : opts.brand === "fractional" ? `Found <span style="color:#f2a0a5">Fractional</span>` : `Found <span style="color:#f2a0a5">Apartments</span>`}</td></tr>
     <tr><td style="padding:28px">
       <h1 style="margin:0 0 10px;font-size:20px;color:#0f172a">${esc(opts.heading)}</h1>
       <p style="margin:0 0 18px;font-size:15px;line-height:1.6;color:#334155">${esc(opts.intro)}</p>

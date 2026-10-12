@@ -74,6 +74,47 @@ Rules worth knowing:
 New collections: `bookings` (the Express Booking schema, extended) and `blockeddates`. The Express app's User schema
 doesn't know the `host` type, so hosts should use the Next.js app.
 
+## Found Fractional (fractional property ownership)
+
+At **`/fractional`**. Investors buy units in a single property from the price of one unit; developers unlock capital
+for their projects. Each property sits in its **own SPV** (a company that owns only that property) and units are shares in it.
+
+**Investors** (any Found account can invest; new sign-ups at `/invest/register` get `userType: "investor"`):
+1. Complete the **investor profile** once at `/dashboard/investments/profile`: category (retail / sophisticated / high-net-worth),
+   income, address, ID upload (private document) and payout account. Found verifies the ID (**Dashboard → Investors & developers**).
+2. On an offering page (`/fractional/<slug>`), choose units and **reserve**. Units are held for 48 hours while the investor pays
+   by bank transfer to the SPV's escrow account (or Found's account if none is set), then submits the payment details.
+3. Found **confirms the payment** (**Dashboard → Orders & payouts**). The investor's holding is credited; the offering flips to
+   *Fully funded* when the last unit sells.
+4. Portfolio at `/dashboard/investments`: holdings, value at the latest valuation, payouts and orders.
+5. After a raise closes, investors can **sell units** on the resale market (`/fractional/market`, `/dashboard/investments/sell`).
+   Buyers pay no service fee; when Found confirms the buyer's payment, units move across and a seller payout (less the resale fee) is due.
+
+**Developers** apply at `/developer/register` (`userType: "developer"`, vetted by Found). They draft offerings at
+`/dashboard/offerings/new` (raise, targets, SPV, escrow account, photos, documents) and **submit for review**. After going live they
+post progress updates (optionally emailed to every investor) and see the investor register.
+
+**Admin** (**Found Fractional** section of the sidebar): review and approve offerings, set fees and featuring, confirm payments,
+close raises, update valuations, mark exits, declare **distributions** (rental income or sale proceeds, split pro rata by units held)
+and record payouts, refunds and seller payouts.
+
+Rules worth knowing:
+- **Minimum raise (soft cap):** closing a raise below it cancels the offering; confirmed investors are flagged *Refund due* until each refund is recorded.
+- **Retail limit:** retail investors can commit up to `NEXT_PUBLIC_FRACTIONAL_RETAIL_LIMIT`% (default 10) of declared annual income in 12 months.
+- **Per-investor cap:** optional `maxUnitsPerInvestor` counts holdings plus open orders.
+- Payments can only be confirmed for investors whose ID is verified. Offerings can only go live for approved developers.
+- Default fees (editable per offering by admins): 5% platform fee from the developer on funds raised, 1% investor service fee on
+  primary purchases, 10% management fee on rental income, 2% resale fee from sellers.
+- Reservations use compare-and-set updates, so concurrent buyers can't oversell. Unpaid orders expire automatically.
+- Offering documents are served only to signed-in users via `/fractional/<slug>/doc/<id>`; investor ID documents only to the investor and admins.
+
+New collections: `fractionalofferings`, `fractionalorders`, `fractionalholdings`, `fractionaldistributions`, `fractionalresales`.
+The Express app's User schema doesn't know the `investor`/`developer` types, so those accounts should use the Next.js app.
+
+> **Regulatory note.** Offering fractional units to the public is regulated by the SEC (Investments and Securities Act 2025 and the
+> SEC crowdfunding / collective investment rules). Confirm the licensing route (e.g. crowdfunding portal registration or partnering
+> with a registered portal/trustee), the retail limit and investor disclosures with counsel before the first offering goes live.
+
 ## Photo storage (Cloudflare R2)
 
 Photo URLs are stored in MongoDB as `/uploads/<file>` by both apps. With R2 configured:

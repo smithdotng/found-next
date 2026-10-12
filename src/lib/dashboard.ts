@@ -1,7 +1,7 @@
 import "server-only";
 import { Types } from "mongoose";
 import { connectDB, toPlain } from "./db";
-import { Inquiry, Project, ProjectInquiry, Promotion, Property, User, Blog, Booking, VerificationRequest, PrivateClient } from "./models";
+import { Inquiry, Project, ProjectInquiry, Promotion, Property, User, Blog, Booking, VerificationRequest, PrivateClient, FractionalOffering, FractionalOrder } from "./models";
 import { escapeRegex } from "./format";
 import type { AuthedSession } from "./session";
 import type { InquiryDoc, PropertyDoc } from "./types";
@@ -23,7 +23,13 @@ export async function getNavCounts(session: AuthedSession) {
       VerificationRequest.countDocuments({ status: "pending" }),
       PrivateClient.countDocuments({ status: "new" }),
     ]);
-    return { approvals: pending, inquiries: unread + projectNew, bookings, hosts, verifications, privateClients };
+    const [offerings, fractionalOrders, kyc, developers] = await Promise.all([
+      FractionalOffering.countDocuments({ status: "in_review" }),
+      FractionalOrder.countDocuments({ $or: [{ status: "payment_submitted" }, { "sellerPayout.status": "due" }] }),
+      User.countDocuments({ "investorProfile.kycStatus": "pending" }),
+      User.countDocuments({ userType: "developer", "developerProfile.status": "pending" }),
+    ]);
+    return { approvals: pending, inquiries: unread + projectNew, bookings, hosts, verifications, privateClients, offerings, fractionalOrders, investors: kyc + developers };
   }
   if (session.userType === "realtor" || session.userType === "host") {
     const ids = await Property.find({ owner: session.userId }).distinct("_id");

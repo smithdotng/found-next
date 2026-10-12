@@ -1,4 +1,4 @@
-export type UserType = "realtor" | "agent" | "admin" | "host";
+export type UserType = "realtor" | "agent" | "admin" | "host" | "investor" | "developer";
 
 export type PropertyType = "shortlet" | "land" | "building" | "shop" | "business_complex";
 export type TransactionType = "rent" | "sale" | "lease";

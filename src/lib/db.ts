@@ -16,6 +16,11 @@ import "./models/Favorite";
 import "./models/NewsletterCampaign";
 import "./models/Booking";
 import "./models/BlockedDate";
+import "./models/FractionalOffering";
+import "./models/FractionalOrder";
+import "./models/FractionalHolding";
+import "./models/FractionalDistribution";
+import "./models/FractionalResale";
 
 type Cache = { conn: typeof mongoose | null; promise: Promise<typeof mongoose> | null };
 
