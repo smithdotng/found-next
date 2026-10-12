@@ -2,11 +2,13 @@ import Link from "next/link";
 import {
   KeyRound, Building2, Clock, Eye, Inbox, PlusCircle, TrendingUp, ClipboardCheck, Users, MousePointerClick, Wallet, Megaphone, AlertTriangle, ArrowRight, Landmark, Newspaper,
 } from "lucide-react";
+import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/session";
 import { getAdminOverview, getAgentOverview, getRealtorOverview } from "@/lib/dashboard";
 import { PageHeader, StatCard, StatusBadge, EmptyState } from "@/components/dashboard/ui";
 import { HostHome } from "@/components/dashboard/host-home";
 import { getApartmentsAdminSnapshot } from "@/lib/bookings-data";
+import { getFractionalAdminSnapshot } from "@/lib/fractional-data";
 import { SmartImage } from "@/components/ui/smart-image";
 import { formatCompactPrice, formatPrice, primaryImage, timeAgo, typeLabel, PROPERTY_TYPES } from "@/lib/format";
 import type { PropertyDoc } from "@/lib/types";
@@ -23,6 +25,8 @@ export default async function DashboardHome() {
   const first = session.userName.split(" ")[0];
   if (session.userType === "admin") return <AdminHome name={first} />;
   if (session.userType === "agent") return <AgentHome name={first} userId={session.userId} />;
+  if (session.userType === "investor") redirect("/dashboard/investments");
+  if (session.userType === "developer") redirect("/dashboard/offerings");
   if (session.userType === "host") return <HostHome name={first} userId={session.userId} greeting={greeting()} />;
   return <RealtorHome name={first} userId={session.userId} />;
 }
@@ -166,6 +170,7 @@ async function AdminHome({ name }: { name: string }) {
         <StatCard label="Users" value={(d.users.realtors + d.users.agents).toLocaleString()} hint={`${d.users.realtors} realtors · ${d.users.agents} agents · +${d.users.new30} this month`} icon={Users} tone="emerald" href="/dashboard/users" />
       </div>
       <ApartmentsSnapshot />
+      <FractionalSnapshot />
 
       <div className="mt-8 grid gap-6 xl:grid-cols-[1.4fr_1fr]">
         <section className="card p-5">
@@ -335,6 +340,25 @@ async function ApartmentsSnapshot() {
         <Mini href="/dashboard/bookings?tab=upcoming" label="Upcoming stays" value={s.upcoming} />
         <Mini href="/dashboard/bookings?tab=all&payment=awaiting" label="Awaiting guest payment" value={s.awaitingPayment} alert={s.awaitingPayment > 0} />
         <Mini href="/dashboard/bookings?tab=all&payout=due" label="Payouts due to hosts" value={formatCompactPrice(s.payoutDue)} />
+      </div>
+    </section>
+  );
+}
+
+async function FractionalSnapshot() {
+  const s = await getFractionalAdminSnapshot();
+  return (
+    <section className="card mt-6 p-5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="flex items-center gap-2 font-semibold text-ink"><Landmark className="size-4 text-brand-600" /> Found Fractional</h2>
+        <Link href="/fractional" target="_blank" className="text-sm font-medium text-brand-600 hover:underline">View site</Link>
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3 lg:grid-cols-5">
+        <Mini href="/dashboard/offerings?status=in_review" label="Offerings to review" value={s.review} alert={s.review > 0} />
+        <Mini href="/dashboard/offerings?status=live" label="Open raises" value={s.live} />
+        <Mini href="/dashboard/fractional-orders?status=payment_submitted" label="Payments to confirm" value={s.openOrders} alert={s.openOrders > 0} />
+        <Mini href="/dashboard/investors" label="Investor IDs to check" value={s.kyc} alert={s.kyc > 0} />
+        <Mini href="/dashboard/investors?tab=developers" label="Developers to vet" value={s.devs} alert={s.devs > 0} />
       </div>
     </section>
   );

@@ -44,6 +44,7 @@ export function SiteFooter() {
         <FooterCol title="Company" className="lg:col-span-2">
           <FooterLink href="/about">About us</FooterLink>
           <FooterLink href="/projects">Projects</FooterLink>
+          <FooterLink href="/fractional">Found Fractional</FooterLink>
           <FooterLink href="/blog">Blog</FooterLink>
           <FooterLink href="/contact">Contact</FooterLink>
           <FooterLink href="/faq">FAQ</FooterLink>
@@ -51,6 +52,7 @@ export function SiteFooter() {
         <FooterCol title="Partners" className="lg:col-span-2">
           <FooterLink href="/for-realtors">For realtors</FooterLink>
           <FooterLink href="/prestige">Found Prestige</FooterLink>
+          <FooterLink href="/fractional/developers">Raise capital</FooterLink>
           <FooterLink href="/get-verified">Get verified</FooterLink>
           <FooterLink href="/agent/register">Become an agent</FooterLink>
           <FooterLink href="/how-it-works">How it works</FooterLink>

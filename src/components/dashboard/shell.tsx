@@ -7,14 +7,45 @@ import { useState } from "react";
 import clsx from "clsx";
 import {
   LayoutDashboard, Building2, PlusCircle, Inbox, UserCircle, LogOut, Menu, X, ClipboardCheck, Users, Newspaper, Star, Landmark,
-  Megaphone, Search, Wallet, ExternalLink, Download, Receipt, Mail, CalendarCheck, CalendarDays, FileSignature, KeyRound, BadgeCheck, Gem } from "lucide-react";
+  Megaphone, Search, Wallet, ExternalLink, Download, Receipt, Mail, CalendarCheck, CalendarDays, FileSignature, KeyRound, BadgeCheck, Gem,
+  PieChart, Layers, ArrowLeftRight, ShieldCheck, Banknote, HandCoins } from "lucide-react";
 import { usePwa } from "@/components/pwa/pwa-provider";
+import type { UserType } from "@/lib/types";
 
 type NavItem = { href: string; label: string; icon: typeof Inbox; badge?: number; exact?: boolean };
-type User = { name: string; email: string; type: "realtor" | "agent" | "admin" | "host"; superAdmin: boolean };
-type Counts = { approvals: number; inquiries: number; bookings: number; hosts: number; verifications: number; privateClients?: number };
+type User = { name: string; email: string; type: UserType; superAdmin: boolean };
+type Counts = { approvals: number; inquiries: number; bookings: number; hosts: number; verifications: number; privateClients?: number; offerings?: number; fractionalOrders?: number; investors?: number };
+
+/** Found Fractional links every account can use: anyone can invest. */
+const INVEST_ITEMS: NavItem[] = [
+  { href: "/dashboard/investments", label: "My investments", icon: PieChart, exact: true },
+  { href: "/fractional", label: "Browse offerings", icon: Layers, exact: true },
+  { href: "/dashboard/investments/sell", label: "Sell units", icon: ArrowLeftRight },
+  { href: "/dashboard/investments/profile", label: "Investor profile", icon: ShieldCheck },
+];
 
 function navFor(user: User, counts: Counts): { title?: string; items: NavItem[] }[] {
+  if (user.type === "investor") {
+    return [
+      { items: [{ href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true }, ...INVEST_ITEMS.slice(0, 3)] },
+      {
+        title: "Account",
+        items: [INVEST_ITEMS[3], { href: "/dashboard/profile", label: "Profile & settings", icon: UserCircle }],
+      },
+    ];
+  }
+  if (user.type === "developer") {
+    return [
+      {
+        items: [
+          { href: "/dashboard/offerings", label: "My offerings", icon: Landmark },
+          { href: "/dashboard/offerings/new", label: "New offering", icon: PlusCircle, exact: true },
+        ],
+      },
+      { title: "Invest", items: INVEST_ITEMS },
+      { title: "Account", items: [{ href: "/dashboard/profile", label: "Profile & settings", icon: UserCircle }] },
+    ];
+  }
   if (user.type === "host") {
     return [
       {
@@ -27,6 +58,7 @@ function navFor(user: User, counts: Counts): { title?: string; items: NavItem[] 
           { href: "/dashboard/inquiries", label: "Enquiries", icon: Inbox, badge: counts.inquiries },
         ],
       },
+      { title: "Found Fractional", items: INVEST_ITEMS },
       {
         title: "Account",
         items: [
@@ -46,6 +78,7 @@ function navFor(user: User, counts: Counts): { title?: string; items: NavItem[] 
           { href: "/dashboard/earnings", label: "Earnings", icon: Wallet },
         ],
       },
+      { title: "Found Fractional", items: INVEST_ITEMS },
       { title: "Account", items: [{ href: "/dashboard/profile", label: "Profile & settings", icon: UserCircle }] },
     ];
   }
@@ -72,6 +105,15 @@ function navFor(user: User, counts: Counts): { title?: string; items: NavItem[] 
         ],
       },
       {
+        title: "Found Fractional",
+        items: [
+          { href: "/dashboard/offerings", label: "Offerings", icon: Layers, badge: counts.offerings },
+          { href: "/dashboard/fractional-orders", label: "Orders & payouts", icon: Banknote, badge: counts.fractionalOrders },
+          { href: "/dashboard/distributions", label: "Distributions", icon: HandCoins },
+          { href: "/dashboard/investors", label: "Investors & developers", icon: ShieldCheck, badge: counts.investors },
+        ],
+      },
+      {
         title: "Content",
         items: [
           { href: "/dashboard/projects", label: "Projects", icon: Landmark },
@@ -94,6 +136,7 @@ function navFor(user: User, counts: Counts): { title?: string; items: NavItem[] 
         { href: "/dashboard/bookings", label: "Shortlet bookings", icon: CalendarCheck, badge: counts.bookings },
       ],
     },
+    { title: "Found Fractional", items: INVEST_ITEMS },
     {
       title: "Account",
       items: [
@@ -104,7 +147,7 @@ function navFor(user: User, counts: Counts): { title?: string; items: NavItem[] 
   ];
 }
 
-const ROLE_LABEL = { realtor: "Realtor", agent: "Agent", admin: "Administrator", host: "Host · Found Apartments" };
+const ROLE_LABEL: Record<UserType, string> = { realtor: "Realtor", agent: "Agent", admin: "Administrator", host: "Host · Found Apartments", investor: "Investor · Found Fractional", developer: "Developer · Found Fractional" };
 
 export function DashboardShell({ user, counts, children }: { user: User; counts: Counts; children: React.ReactNode }) {
   const pathname = usePathname();
@@ -115,7 +158,7 @@ export function DashboardShell({ user, counts, children }: { user: User; counts:
   const groups = navFor(user, counts);
 
   const isActive = (i: NavItem) =>
-    i.exact ? pathname === i.href : pathname === i.href || (pathname.startsWith(i.href + "/") && !pathname.startsWith("/dashboard/listings/new"));
+    i.exact ? pathname === i.href : pathname === i.href || (pathname.startsWith(i.href + "/") && !pathname.startsWith("/dashboard/listings/new") && !pathname.startsWith("/dashboard/offerings/new"));
 
   const signOut = () => navigator.serviceWorker?.controller?.postMessage("clear-private");
 
@@ -194,7 +237,15 @@ export function DashboardShell({ user, counts, children }: { user: User; counts:
         <Link href="/dashboard">
           <Image src="/assets/images/logo2.png" alt="Found" width={1000} height={355} className="h-9 w-auto" />
         </Link>
-        {user.type !== "agent" ? (
+        {user.type === "developer" ? (
+          <Link href="/dashboard/offerings/new" className="btn-ghost !px-2 text-brand-600" aria-label="New offering">
+            <PlusCircle className="size-5" />
+          </Link>
+        ) : user.type === "investor" ? (
+          <Link href="/fractional" className="btn-ghost !px-2 text-brand-600" aria-label="Browse offerings">
+            <Layers className="size-5" />
+          </Link>
+        ) : user.type !== "agent" ? (
           <Link href="/dashboard/listings/new" className="btn-ghost !px-2 text-brand-600" aria-label="Add listing">
             <PlusCircle className="size-5" />
           </Link>

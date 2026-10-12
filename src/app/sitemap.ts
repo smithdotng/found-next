@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { connectDB } from "@/lib/db";
-import { Blog, Project, Property } from "@/lib/models";
+import { Blog, FractionalOffering, Project, Property } from "@/lib/models";
 import { siteUrl } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +14,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ["/apartments", "daily", 0.9],
     ["/host", "monthly", 0.6],
     ["/projects", "weekly", 0.8],
+    ["/fractional", "daily", 0.9],
+    ["/fractional/market", "daily", 0.6],
+    ["/fractional/developers", "monthly", 0.6],
     ["/blog", "weekly", 0.7],
     ["/about", "monthly", 0.6],
     ["/how-it-works", "monthly", 0.6],
@@ -30,10 +33,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   try {
     await connectDB();
-    const [properties, blogs, projects] = await Promise.all([
+    const [properties, blogs, projects, offerings] = await Promise.all([
       Property.find({ status: "available" }).select("slug updatedAt propertyType").sort("-createdAt").limit(5000).lean(),
       Blog.find({ status: "published" }).select("slug updatedAt").sort("-publishedAt").limit(2000).lean(),
       Project.find({ status: "published" }).select("slug updatedAt").sort("-createdAt").limit(2000).lean(),
+      FractionalOffering.find({ status: { $in: ["live", "funded", "active", "exited"] } }).select("slug updatedAt").limit(1000).lean(),
     ]);
     type Row = { slug?: string; updatedAt?: Date; propertyType?: string };
     for (const p of properties as Row[])
@@ -41,6 +45,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         out.push({ url: `${base}/${p.propertyType === "shortlet" ? "apartments" : "properties"}/${p.slug}`, lastModified: p.updatedAt, changeFrequency: "weekly", priority: 0.8 });
     for (const b of blogs as Row[]) if (b.slug) out.push({ url: `${base}/blog/${b.slug}`, lastModified: b.updatedAt, changeFrequency: "monthly", priority: 0.6 });
     for (const pr of projects as Row[]) if (pr.slug) out.push({ url: `${base}/projects/${pr.slug}`, lastModified: pr.updatedAt, changeFrequency: "weekly", priority: 0.7 });
+    for (const f of offerings as Row[]) if (f.slug) out.push({ url: `${base}/fractional/${f.slug}`, lastModified: f.updatedAt, changeFrequency: "daily", priority: 0.8 });
   } catch (e) {
     console.error("XML sitemap error:", e);
   }

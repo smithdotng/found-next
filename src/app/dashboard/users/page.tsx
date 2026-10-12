@@ -20,7 +20,7 @@ export default async function UsersPage({ searchParams }: PageProps<"/dashboard/
 
   await connectDB();
   const query: Record<string, unknown> = {};
-  if (type === "realtor" || type === "agent" || type === "admin" || type === "host") query.userType = type;
+  if (["realtor", "agent", "admin", "host", "investor", "developer"].includes(type ?? "")) query.userType = type;
   if (type === "unverified") Object.assign(query, { userType: "realtor", "realtorProfile.verified": { $ne: true } });
   if (type === "suspended") query.isSuspended = true;
   if (q) {
@@ -50,10 +50,12 @@ export default async function UsersPage({ searchParams }: PageProps<"/dashboard/
       <Tabs
         active={type}
         tabs={[
-          { key: "all", label: "All", count: (c.realtor ?? 0) + (c.agent ?? 0) + (c.admin ?? 0) + (c.host ?? 0) },
+          { key: "all", label: "All", count: (c.realtor ?? 0) + (c.agent ?? 0) + (c.admin ?? 0) + (c.host ?? 0) + (c.investor ?? 0) + (c.developer ?? 0) },
           { key: "realtor", label: "Realtors", count: c.realtor ?? 0 },
           { key: "agent", label: "Agents", count: c.agent ?? 0 },
           { key: "host", label: "Hosts", count: c.host ?? 0 },
+          { key: "investor", label: "Investors", count: c.investor ?? 0 },
+          { key: "developer", label: "Developers", count: c.developer ?? 0 },
           { key: "unverified", label: "Unverified realtors" },
           { key: "suspended", label: "Suspended" },
           { key: "admin", label: "Admins", count: c.admin ?? 0 },

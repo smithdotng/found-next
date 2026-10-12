@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema({
     },
     userType: {
         type: String,
-        enum: ['realtor', 'agent', 'admin', 'host'],
+        enum: ['realtor', 'agent', 'admin', 'host', 'investor', 'developer'],
         default: 'realtor'
     },
     profileImage: {
@@ -88,6 +88,39 @@ const userSchema = new mongoose.Schema({
             accountNumber: String,
             accountName: String
         }
+    },
+    // Found Fractional investor (any account type can invest). Added by the Next.js app.
+    investorProfile: {
+        // retail investors have an annual limit; sophisticated / high-net-worth self-certify
+        category: { type: String, enum: ['retail', 'sophisticated', 'hnw'], default: 'retail' },
+        annualIncome: Number,
+        occupation: String,
+        address: String,
+        city: String,
+        state: String,
+        idType: String,
+        idDocument: { key: String, name: String, contentType: String, size: Number },
+        kycStatus: { type: String, enum: ['none', 'pending', 'approved', 'rejected'], default: 'none' },
+        kycNote: String,
+        kycSubmittedAt: Date,
+        kycReviewedAt: Date,
+        riskAcknowledgedAt: Date,
+        bankDetails: { bankName: String, accountNumber: String, accountName: String }
+    },
+    // Found Fractional developer raising capital for a project. Added by the Next.js app.
+    developerProfile: {
+        company: String,
+        rcNumber: String,
+        address: String,
+        city: String,
+        state: String,
+        website: String,
+        projectsCompleted: Number,
+        about: String,
+        status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+        reviewNote: String,
+        reviewedAt: Date,
+        bankDetails: { bankName: String, accountNumber: String, accountName: String }
     },
     // Agent specific fields
     agentProfile: {

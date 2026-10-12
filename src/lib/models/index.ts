@@ -18,6 +18,11 @@ import BlockedDateModel from "./BlockedDate";
 import VerificationRequestModel from "./VerificationRequest";
 import PreVerificationModel from "./PreVerification";
 import PrivateClientModel from "./PrivateClient";
+import FractionalOfferingModel from "./FractionalOffering";
+import FractionalOrderModel from "./FractionalOrder";
+import FractionalHoldingModel from "./FractionalHolding";
+import FractionalDistributionModel from "./FractionalDistribution";
+import FractionalResaleModel from "./FractionalResale";
 
 // The schemas live in plain JS (ported verbatim from the Express app);
 // these aliases give the TypeScript side a usable Model type.
@@ -39,3 +44,8 @@ export const BlockedDate = BlockedDateModel as Model<any>;
 export const VerificationRequest = VerificationRequestModel as Model<any>;
 export const PreVerification = PreVerificationModel as Model<any>;
 export const PrivateClient = PrivateClientModel as Model<any>;
+export const FractionalOffering = FractionalOfferingModel as Model<any>;
+export const FractionalOrder = FractionalOrderModel as Model<any>;
+export const FractionalHolding = FractionalHoldingModel as Model<any>;
+export const FractionalDistribution = FractionalDistributionModel as Model<any>;
+export const FractionalResale = FractionalResaleModel as Model<any>;

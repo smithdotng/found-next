@@ -1,5 +1,7 @@
 "use client";
 
+import type { UserType } from "@/lib/types";
+
 import { mediaUrl } from "@/lib/media";
 import { useActionState, useState } from "react";
 import { BadgeCheck, Camera } from "lucide-react";
@@ -11,7 +13,7 @@ export type ProfileUser = {
   name: string;
   email: string;
   phone: string;
-  userType: "realtor" | "agent" | "admin" | "host";
+  userType: UserType;
   profileImage?: string;
   hostProfile?: { businessName?: string; address?: string; city?: string; about?: string };
   realtorProfile?: { company?: string; rcNumber?: string; address?: string; verified?: boolean };
