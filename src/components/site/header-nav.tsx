@@ -13,13 +13,57 @@ import { usePwa } from "@/components/pwa/pwa-provider";
 
 type User = { name: string; type: string } | null;
 
-const links = [
-  { href: "/apartments", label: "Apartments" },
-  { href: "/projects", label: "Projects" },
-  { href: "/prestige", label: "Prestige" },
-  { href: "/how-it-works", label: "How it works" },
-  { href: "/for-realtors", label: "For realtors" },
-  { href: "/blog", label: "Blog" },
+type Item = { href: string; label: string; text?: string };
+type Group = { label: string; href?: string; match: string[]; columns: { title?: string; items: Item[] }[] };
+
+const BROWSE: Item[] = [{ href: "/properties", label: "All properties" }, ...PROPERTY_TYPES.map((t) => ({ href: `/properties?type=${t.value}`, label: t.plural }))];
+
+/** Main menu: four entries, everything else grouped under them. */
+const GROUPS: Group[] = [
+  {
+    label: "Properties",
+    href: "/properties",
+    match: ["/properties", "/projects", "/prestige"],
+    columns: [
+      { title: "Browse", items: BROWSE },
+      {
+        title: "Collections",
+        items: [
+          { href: "/projects", label: "Projects", text: "New developments and estates" },
+          { href: "/prestige", label: "Found Prestige", text: "Curated premium homes" },
+        ],
+      },
+    ],
+  },
+  {
+    label: "Partners",
+    match: ["/for-realtors", "/get-verified", "/host", "/agent"],
+    columns: [
+      {
+        items: [
+          { href: "/for-realtors", label: "For realtors", text: "List and manage your properties" },
+          { href: "/get-verified", label: "Get verified", text: "Earn the Verified by Found badge" },
+          { href: "/host", label: "Become a host", text: "List shortlets on Found Apartments" },
+          { href: "/agent/register", label: "Become an agent", text: "Earn by promoting listings" },
+        ],
+      },
+    ],
+  },
+  {
+    label: "Learn",
+    match: ["/how-it-works", "/blog", "/faq", "/about", "/contact"],
+    columns: [
+      {
+        items: [
+          { href: "/how-it-works", label: "How it works" },
+          { href: "/blog", label: "Blog" },
+          { href: "/faq", label: "FAQ" },
+          { href: "/about", label: "About us" },
+          { href: "/contact", label: "Contact" },
+        ],
+      },
+    ],
+  },
 ];
 
 export function HeaderNav({ user }: { user: User }) {
@@ -36,49 +80,20 @@ export function HeaderNav({ user }: { user: User }) {
   }, [open]);
 
   const active = (href: string) => pathname === href || pathname.startsWith(href + "/");
+  const groupActive = (g: Group) => g.match.some(active);
 
   return (
     <>
       <nav className="hidden flex-1 items-center gap-1 lg:flex" aria-label="Main">
-        <div className="group relative">
-          <Link
-            href="/properties"
-            className={clsx(
-              "flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition hover:text-brand-600",
-              active("/properties") ? "text-brand-600" : "text-slate-600",
-            )}
-          >
-            Properties <ChevronDown className="size-3.5 transition group-hover:rotate-180" />
-          </Link>
-          <div className="invisible absolute left-0 top-full w-56 translate-y-1 pt-2 opacity-0 transition group-hover:visible group-hover:translate-y-0 group-hover:opacity-100">
-            <div className="card p-1.5">
-              <Link href="/properties" className="block rounded-lg px-3 py-2 text-sm font-medium text-ink hover:bg-slate-50">
-                All properties
-              </Link>
-              {PROPERTY_TYPES.map((t) => (
-                <Link
-                  key={t.value}
-                  href={`/properties?type=${t.value}`}
-                  className="block rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-ink"
-                >
-                  {t.plural}
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-        {links.map((l) => (
-          <Link
-            key={l.href}
-            href={l.href}
-            className={clsx(
-              "rounded-lg px-3 py-2 text-sm font-medium transition hover:text-brand-600",
-              active(l.href) ? "text-brand-600" : "text-slate-600",
-            )}
-          >
-            {l.label}
-          </Link>
-        ))}
+        <NavDropdown group={GROUPS[0]} on={groupActive(GROUPS[0])} />
+        <Link
+          href="/apartments"
+          className={clsx("rounded-lg px-3 py-2 text-sm font-medium transition hover:text-brand-600", active("/apartments") ? "text-brand-600" : "text-slate-600")}
+        >
+          Apartments
+        </Link>
+        <NavDropdown group={GROUPS[1]} on={groupActive(GROUPS[1])} />
+        <NavDropdown group={GROUPS[2]} on={groupActive(GROUPS[2])} />
       </nav>
 
       <div className="ml-auto flex items-center gap-2">
@@ -176,23 +191,9 @@ function MobileMenu({
             ))}
           </div>
 
-          <p className="px-1 pb-1 pt-6 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Found</p>
-          <nav className="divide-y divide-slate-100" aria-label="Mobile">
-            {[...links.filter((l) => l.href !== "/apartments"), { href: "/host", label: "Become a host" }, { href: "/agent/register", label: "Become an agent" }, { href: "/about", label: "About us" }, { href: "/contact", label: "Contact" }].map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                onClick={onClose}
-                className={clsx(
-                  "flex items-center justify-between px-1 py-3 text-[15px] font-medium transition",
-                  active(l.href) ? "text-brand-600" : "text-ink hover:text-brand-600",
-                )}
-              >
-                {l.label}
-                <ChevronRight className="size-4 text-slate-300" />
-              </Link>
-            ))}
-          </nav>
+          <MobileSection title="Collections" items={GROUPS[0].columns[1].items} active={active} onClose={onClose} />
+          <MobileSection title="Partners" items={GROUPS[1].columns[0].items} active={active} onClose={onClose} />
+          <MobileSection title="Learn" items={GROUPS[2].columns[0].items} active={active} onClose={onClose} />
         </div>
 
         <div className="shrink-0 space-y-2 border-t border-slate-100 bg-white p-4 safe-bottom">
@@ -238,5 +239,70 @@ function MenuChip({ href, children, onClose, strong }: { href: string; children:
     >
       {children}
     </Link>
+  );
+}
+
+function NavDropdown({ group, on }: { group: Group; on: boolean }) {
+  const wide = group.columns.length > 1;
+  const trigger = clsx(
+    "flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition hover:text-brand-600 group-focus-within:text-brand-600",
+    on ? "text-brand-600" : "text-slate-600",
+  );
+  return (
+    <div className="group relative">
+      {group.href ? (
+        <Link href={group.href} className={trigger} aria-haspopup="true">
+          {group.label} <ChevronDown className="size-3.5 transition group-hover:rotate-180 group-focus-within:rotate-180" />
+        </Link>
+      ) : (
+        <button type="button" className={trigger} aria-haspopup="true">
+          {group.label} <ChevronDown className="size-3.5 transition group-hover:rotate-180 group-focus-within:rotate-180" />
+        </button>
+      )}
+      <div
+        className={clsx(
+          "invisible absolute left-0 top-full z-50 translate-y-1 pt-2 opacity-0 transition group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100",
+          wide ? "w-[30rem]" : group.columns[0].items.some((i) => i.text) ? "w-72" : "w-52",
+        )}
+      >
+        <div className={clsx("card grid gap-1 p-2", wide && "grid-cols-2")}>
+          {group.columns.map((col, i) => (
+            <div key={i} className={clsx(wide && i > 0 && "border-l border-slate-100 pl-2")}>
+              {col.title ? <p className="px-3 pb-1 pt-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">{col.title}</p> : null}
+              {col.items.map((it, j) => (
+                <Link key={it.href} href={it.href} className="block rounded-lg px-3 py-2 hover:bg-slate-50">
+                  <span className={clsx("block text-sm", j === 0 && col.title === "Browse" ? "font-semibold text-ink" : "font-medium text-ink")}>{it.label}</span>
+                  {it.text ? <span className="block text-xs text-slate-500">{it.text}</span> : null}
+                </Link>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MobileSection({ title, items, active, onClose }: { title: string; items: Item[]; active: (href: string) => boolean; onClose: () => void }) {
+  return (
+    <>
+      <p className="px-1 pb-1 pt-6 text-[11px] font-semibold uppercase tracking-wider text-slate-400">{title}</p>
+      <nav className="divide-y divide-slate-100" aria-label={title}>
+        {items.map((l) => (
+          <Link
+            key={l.href}
+            href={l.href}
+            onClick={onClose}
+            className={clsx("flex items-center justify-between px-1 py-3 text-[15px] font-medium transition", active(l.href) ? "text-brand-600" : "text-ink hover:text-brand-600")}
+          >
+            <span>
+              {l.label}
+              {l.text ? <span className="block text-xs font-normal text-slate-500">{l.text}</span> : null}
+            </span>
+            <ChevronRight className="size-4 text-slate-300" />
+          </Link>
+        ))}
+      </nav>
+    </>
   );
 }
