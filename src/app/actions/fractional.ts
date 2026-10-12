@@ -115,8 +115,8 @@ export async function registerDeveloper(_prev: FormState, fd: FormData): Promise
   });
   mail(email, "Your Found Fractional developer application", {
     heading: `Thanks, ${name.split(" ")[0]}`,
-    intro: "We've received your application. Our team will verify your company and track record and may call you. Meanwhile you can start drafting your first offering.",
-    note: "Next steps: 1) We vet your company. 2) You submit an offering with its SPV, title and valuation documents. 3) We review it and put it live for investors.",
+    intro: "We've received your application. Our team will review your company and track record and may call you. Found Fractional is in pre-launch and not yet registered with the SEC, so no capital can be raised yet, but you can prepare a draft offering.",
+    note: "Next steps: 1) We review your company. 2) You prepare an offering with its SPV, title and valuation documents. 3) Once the platform is registered and open, we review the offering for publication.",
     cta: { label: "Start an offering", href: "/dashboard/offerings/new" },
   });
   await signIn({ _id: user._id, userType: "developer", name, email });
