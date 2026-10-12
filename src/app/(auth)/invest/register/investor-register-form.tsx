@@ -27,12 +27,12 @@ export function InvestorRegisterForm({ next }: { next?: string }) {
         {e("terms") ? <p className="text-xs text-rose-600">{e("terms")}</p> : null}
         <label className="flex items-start gap-2">
           <input type="checkbox" name="newsletter" className="mt-0.5 size-4 rounded accent-brand-600" />
-          <span>Email me when new offerings open.</span>
+          <span>Email me when Found Fractional opens and new offerings are published.</span>
         </label>
       </div>
       {state?.errors ? <FormMessage state={state} /> : null}
-      <SubmitButton pendingText="Creating account…">Create investor account</SubmitButton>
-      <p className="text-center text-xs text-slate-500">Next, you&apos;ll verify your ID once. It takes about two minutes.</p>
+      <SubmitButton pendingText="Creating account…">Register interest</SubmitButton>
+      <p className="text-center text-xs text-slate-500">Registering is not an investment and doesn&apos;t commit you to anything.</p>
     </form>
   );
 }

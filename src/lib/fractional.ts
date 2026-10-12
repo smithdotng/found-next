@@ -1,8 +1,23 @@
 // Found Fractional: constants and maths shared by pages, actions and emails (no server imports).
 
 export const RESERVATION_HOURS = 48;
-/** Retail investors may put at most this % of declared annual income into offerings per 12 months. Confirm with SEC counsel. */
+/** Retail investors may put at most this % of their net annual income into offerings per year (SEC crowdfunding rules). */
 export const RETAIL_ANNUAL_LIMIT_PERCENT = Number(process.env.NEXT_PUBLIC_FRACTIONAL_RETAIL_LIMIT ?? 10);
+/**
+ * Investing stays closed until Found (or the regulated intermediary it partners with) is registered with
+ * the SEC for this activity. Set NEXT_PUBLIC_FRACTIONAL_OPEN=1 only once that registration is in place.
+ * While closed, offerings can be previewed but no units can be reserved, paid for or resold.
+ */
+export const FRACTIONAL_OPEN = process.env.NEXT_PUBLIC_FRACTIONAL_OPEN === "1";
+
+/** Shown wherever offerings are presented while investing is closed. */
+export const PRELAUNCH_NOTICE =
+  "Found Fractional is in pre-launch. Nothing on this site is an offer or invitation to buy securities. No investment can be made, and no money will be accepted, until the platform is registered with the Securities and Exchange Commission, Nigeria.";
+
+/** Standard risk and regulatory statement for offering pages and marketing. */
+export const RISK_STATEMENT =
+  "Investing in unlisted property involves risk, including the loss of some or all of the money invested. Target returns are estimates, not promises, and are not guaranteed. Past performance is not a reliable guide to the future. Units may be difficult to sell. Investments are not bank deposits and are not insured. Read each offering's documents and seek independent advice before investing.";
+
 export const DEFAULT_FEES = { platform: 5, investor: 1, management: 10, resale: 2 };
 
 export type OfferingStatus = "draft" | "in_review" | "changes_requested" | "live" | "funded" | "active" | "exited" | "cancelled";
@@ -103,7 +118,7 @@ export const OFFERING_STATUS: Record<OfferingStatus, { label: string; tone: stri
   draft: { label: "Draft", tone: "bg-slate-100 text-slate-600 ring-slate-500/20" },
   in_review: { label: "In review", tone: "bg-amber-50 text-amber-800 ring-amber-600/20" },
   changes_requested: { label: "Changes requested", tone: "bg-rose-50 text-rose-700 ring-rose-600/20" },
-  live: { label: "Open for investment", tone: "bg-emerald-50 text-emerald-700 ring-emerald-600/20" },
+  live: { label: FRACTIONAL_OPEN ? "Open for investment" : "Coming soon", tone: "bg-emerald-50 text-emerald-700 ring-emerald-600/20" },
   funded: { label: "Fully funded", tone: "bg-brand-50 text-brand-700 ring-brand-600/20" },
   active: { label: "Raise closed · active", tone: "bg-brand-50 text-brand-700 ring-brand-600/20" },
   exited: { label: "Exited", tone: "bg-slate-100 text-slate-700 ring-slate-500/20" },
@@ -127,9 +142,9 @@ export const KYC_STATUS: Record<KycStatus, { label: string; tone: string }> = {
 };
 
 export const INVESTOR_CATEGORY = {
-  retail: { label: "Retail investor", text: `Most people. You can invest up to ${RETAIL_ANNUAL_LIMIT_PERCENT}% of your annual income in a 12-month period.` },
-  sophisticated: { label: "Sophisticated investor", text: "You have investment experience and understand the risks of unlisted property investments." },
-  hnw: { label: "High-net-worth investor", text: "You have substantial net assets or income and can bear the loss of your investment." },
+  retail: { label: "Retail investor", text: `Most people. Your investments are limited to ${RETAIL_ANNUAL_LIMIT_PERCENT}% of your net annual income each year.` },
+  sophisticated: { label: "Sophisticated investor", text: "You meet the SEC criteria for sophisticated investors and understand the risks of unlisted investments. You may be asked for evidence." },
+  hnw: { label: "High-net-worth investor", text: "You meet the SEC criteria for high-net-worth investors and can bear the loss of your investment. You may be asked for evidence." },
 } as const;
 
 /** Offerings people can currently buy units in from the developer. */
@@ -158,7 +173,7 @@ export function fundingProgress(o: Pick<OfferingDoc, "totalUnits" | "unitsSold" 
 
 /** True while an offering is accepting primary investments right now. */
 export function isOpen(o: Pick<OfferingDoc, "status" | "opensAt" | "closesAt" | "totalUnits" | "unitsSold" | "unitsReserved">, now = Date.now()) {
-  if (o.status !== "live") return false;
+  if (!FRACTIONAL_OPEN || o.status !== "live") return false;
   if (o.opensAt && new Date(o.opensAt).getTime() > now) return false;
   if (o.closesAt && new Date(o.closesAt).getTime() < now) return false;
   return unitsAvailable(o) > 0;

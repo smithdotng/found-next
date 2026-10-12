@@ -7,19 +7,19 @@ import { formatPrice, stateLabel } from "@/lib/format";
 import { getMarketListings } from "@/lib/fractional-data";
 import { PageHero } from "@/components/site/page-hero";
 import { SmartImage } from "@/components/ui/smart-image";
-import { DEFAULT_FEES } from "@/lib/fractional";
+import { DEFAULT_FEES, FRACTIONAL_OPEN, PRELAUNCH_NOTICE } from "@/lib/fractional";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Resale Market - Buy Units From Other Investors | Found Fractional",
+  title: "Investor Transfers | Found Fractional",
   absoluteTitle: true,
-  description: "Buy units in funded Found Fractional properties from existing investors, often already earning rent. No buyer service fee.",
+  description: "Units in funded Found Fractional properties that existing investors have offered to transfer, where permitted by SEC rules.",
   path: "/fractional/market",
 });
 
 export const dynamic = "force-dynamic";
 
 export default async function MarketPage() {
-  const listings = await getMarketListings();
+  const listings = FRACTIONAL_OPEN ? await getMarketListings() : [];
   // One row per offering: the cheapest listing and total units for sale.
   const byOffering = new Map<string, { o: Exclude<(typeof listings)[number]["offering"], string>; cheapest: number; units: number; count: number }>();
   for (const l of listings) {
@@ -37,9 +37,9 @@ export default async function MarketPage() {
     <>
       <PageHero
         eyebrow="Found Fractional"
-        title="Resale market"
-        lead={`Buy units in funded properties from investors who want to sell. Prices are set by sellers; buyers pay no service fee and sellers pay ${DEFAULT_FEES.resale}% when their units sell.`}
-        crumbs={[{ href: "/fractional", label: "Found Fractional" }, { label: "Resale market" }]}
+        title="Investor transfers"
+        lead={FRACTIONAL_OPEN ? `Units in funded properties that existing investors have offered to transfer, after any lock-in period. Prices are set by sellers and may not reflect value; sellers pay a ${DEFAULT_FEES.resale}% fee. There may be no buyer for units you hold.` : PRELAUNCH_NOTICE}
+        crumbs={[{ href: "/fractional", label: "Found Fractional" }, { label: "Investor transfers" }]}
       />
       <section className="container-page py-12">
         {rows.length ? (
@@ -75,9 +75,9 @@ export default async function MarketPage() {
         ) : (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
             <ArrowLeftRight className="mx-auto size-8 text-slate-300" />
-            <p className="mt-3 font-semibold text-ink">No units for resale right now</p>
-            <p className="mx-auto mt-1 max-w-md text-sm text-slate-500">Units appear here when investors in funded properties choose to sell. Meanwhile, see what&apos;s open for investment.</p>
-            <Link href="/fractional#offerings" className="btn-primary mt-6">Open offerings <ArrowRight className="size-4" /></Link>
+            <p className="mt-3 font-semibold text-ink">No units offered for transfer</p>
+            <p className="mx-auto mt-1 max-w-md text-sm text-slate-500">Units appear here when investors in funded properties offer them for transfer, where SEC rules allow.</p>
+            <Link href="/fractional" className="btn-primary mt-6">About Found Fractional <ArrowRight className="size-4" /></Link>
           </div>
         )}
       </section>

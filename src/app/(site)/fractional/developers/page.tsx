@@ -5,12 +5,13 @@ import { ArrowRight, BadgeCheck, Banknote, ClipboardCheck, FileStack, LayoutDash
 import { pageMetadata } from "@/lib/seo";
 import { formatPrice } from "@/lib/format";
 import { FaqList } from "@/components/site/faq-list";
+import { PrelaunchBanner } from "@/components/fractional/regulatory-notice";
 import { DEFAULT_FEES, developerProceeds } from "@/lib/fractional";
 
 export const metadata: Metadata = pageMetadata({
   title: "Raise Capital for Your Property Project - Found Fractional for Developers",
   absoluteTitle: true,
-  description: `Unlock capital for your real estate project by offering fractional units to vetted investors on Found Fractional. Found handles onboarding, payments, the investor register and payouts for ${DEFAULT_FEES.platform}% of funds raised.`,
+  description: `Apply to raise capital for your real estate project through Found Fractional once it opens. Found would handle investor onboarding, the investor register and distributions for ${DEFAULT_FEES.platform}% of funds raised.`,
   path: "/fractional/developers",
   keywords: "raise capital real estate Nigeria, property developer funding, real estate crowdfunding for developers, Found Fractional developers",
 });
@@ -23,31 +24,33 @@ export default function DevelopersPage() {
     { icon: UserPlus, title: "Apply", text: "Tell us about your company and track record. We verify your CAC records, past projects and directors." },
     { icon: FileStack, title: "Prepare the offering", text: "Set up an SPV for the property, then add the title, valuation, budget, timeline and exit plan in your dashboard." },
     { icon: ClipboardCheck, title: "Found reviews it", text: "We check the documents and stress-test the numbers. Once it passes, the offering goes live to Found's investors." },
-    { icon: Banknote, title: "Receive the capital", text: "Investors pay into the SPV's escrow account. When the raise closes above its minimum, the funds are released to the project." },
+    { icon: Banknote, title: "Receive the capital", text: "Investors pay into a custodial account held with an SEC-registered custodian. If the raise closes above its minimum, the funds are released to the project." },
   ];
   const perks = [
-    { icon: Users, title: "Hundreds of investors, one relationship", text: "Found deals with every investor: KYC, payments, questions and the share register." },
-    { icon: Megaphone, title: "Marketing included", text: "Your offering is promoted to Found's audience of buyers, investors, realtors and agents." },
+    { icon: Users, title: "Many investors, one relationship", text: "Found deals with investors directly: KYC, subscriptions, questions and the share register." },
+    { icon: Megaphone, title: "Listed on Found", text: "Approved offerings are presented to registered Found users, within the limits SEC rules set on advertising investments." },
     { icon: LayoutDashboard, title: "Investor reporting built in", text: "Post progress updates and Found emails every investor. Distributions are calculated and tracked for you." },
-    { icon: BadgeCheck, title: "Credibility that sells units", text: "A Found-reviewed offering gives your off-plan buyers and partners confidence too." },
+    { icon: BadgeCheck, title: "Independent review", text: "Every offering is reviewed against its documents before it can be listed. Found's review is due diligence, not an endorsement." },
   ];
   const faqs = [
-    { q: "What can I raise for?", a: "Off-plan residential and commercial developments, completed income-generating property, and shortlet or serviced apartment blocks. You can raise part of a project's cost; most developers raise 20–60% and fund the rest themselves or through debt." },
+    { q: "What can I raise for?", a: "Off-plan residential and commercial developments, completed income-generating property, and shortlet or serviced apartment blocks, usually for part of a project's cost. How much can be raised, and by whom, depends on the SEC rules that apply to the offering; Found will confirm this for each project." },
     { q: "What's an SPV and why do I need one?", a: "A special purpose vehicle is a company set up to own one property. Investors buy shares in it, so their money and ownership are tied to that property alone. Found can introduce you to lawyers who set them up." },
     { q: "What does it cost?", a: `Found charges ${DEFAULT_FEES.platform}% of the funds raised, deducted when the funds are released. There's no fee to apply or list, and nothing to pay if the raise doesn't reach its minimum. Found also earns a ${DEFAULT_FEES.management}% management fee on rental income it distributes.` },
     { q: "What if the raise isn't fully subscribed?", a: "You set a minimum raise (usually 60–80% of the target). If it's reached by the closing date, the raise goes ahead with what was raised. If not, investors are refunded in full and you pay nothing." },
-    { q: "What do I owe investors?", a: "What the offering documents say: usually regular progress updates, rent passed through the SPV, and their share of the proceeds when the property is sold or refinanced at the end of the term." },
+    { q: "What do I owe investors?", a: "What the offering documents say: usually regular progress updates, rent passed through the SPV, and their share of the proceeds when the property is sold or refinanced. Targets you publish must be reasonable and supported, and must never be presented as guaranteed." },
+    { q: "Is Found Fractional open now?", a: "Not yet. Found Fractional is in pre-launch and isn't accepting investments until its SEC registration is complete. You can apply and prepare an offering now so it's ready to review when the platform opens." },
   ];
   return (
     <>
+      <PrelaunchBanner />
       <section className="relative isolate overflow-hidden bg-brand-950">
         <Image src="/images/cta-bg1.jpg" alt="" fill priority sizes="100vw" className="-z-10 object-cover opacity-30" />
         <div className="absolute inset-0 -z-10 bg-gradient-to-r from-brand-950 via-brand-950/85 to-brand-950/30" />
         <div className="container-page py-16 sm:py-24">
           <p className="text-sm font-semibold text-coral-200">Found Fractional for developers</p>
-          <h1 className="mt-3 max-w-2xl text-4xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-5xl">Unlock capital for your project from investors who believe in it.</h1>
+          <h1 className="mt-3 max-w-2xl text-4xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-5xl">Raise part of your project&apos;s capital from many investors.</h1>
           <p className="mt-4 max-w-xl text-lg text-white/80">
-            Offer fractional units of your property to Found&apos;s vetted investors. We run the raise, the register and the payouts, so you can focus on building.
+            Apply now to be reviewed for Found Fractional. Once the platform is registered with the SEC and open, approved developers can offer units in their property&apos;s SPV, with Found running onboarding, the register and distributions.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href="/developer/register" className="btn-accent px-6 py-3 text-base">Apply to raise <ArrowRight className="size-4" /></Link>

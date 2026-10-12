@@ -142,11 +142,11 @@ export function SellForm({ holdings }: { holdings: { offeringId: string; title: 
       </div>
       <dl className="space-y-1.5 rounded-xl bg-slate-50 p-3.5 text-sm">
         <div className="flex justify-between"><dt className="text-slate-600">Sale price</dt><dd>{formatPrice(p.gross)}</dd></div>
-        <div className="flex justify-between"><dt className="text-slate-600">Found resale fee ({h.resaleFee}%)</dt><dd>−{formatPrice(p.fee)}</dd></div>
-        <div className="flex justify-between border-t border-slate-200 pt-1.5 font-bold text-ink"><dt>You receive if all sell</dt><dd>{formatPrice(p.net)}</dd></div>
+        <div className="flex justify-between"><dt className="text-slate-600">Found transfer fee ({h.resaleFee}%)</dt><dd>−{formatPrice(p.fee)}</dd></div>
+        <div className="flex justify-between border-t border-slate-200 pt-1.5 font-bold text-ink"><dt>You receive if all are transferred</dt><dd>{formatPrice(p.net)}</dd></div>
       </dl>
       <FormMessage state={state} />
-      <SubmitButton className="btn-primary w-full py-3 sm:w-auto" pendingText="Listing…">List units for sale</SubmitButton>
+      <SubmitButton className="btn-primary w-full py-3 sm:w-auto" pendingText="Listing…">Offer units for transfer</SubmitButton>
     </form>
   );
 }

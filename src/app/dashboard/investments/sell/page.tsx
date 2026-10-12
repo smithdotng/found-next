@@ -7,9 +7,9 @@ import { ActionButton } from "@/components/dashboard/action-button";
 import { SellForm } from "@/components/fractional/forms";
 import { withdrawListing } from "@/app/actions/fractional";
 import { formatDate, formatPrice } from "@/lib/format";
-import { DEFAULT_FEES, TRADABLE_STATUSES } from "@/lib/fractional";
+import { DEFAULT_FEES, FRACTIONAL_OPEN, TRADABLE_STATUSES } from "@/lib/fractional";
 
-export const metadata = { title: "Sell units" };
+export const metadata = { title: "Transfer units" };
 
 export default async function SellPage() {
   const session = await requireUser();
@@ -28,14 +28,14 @@ export default async function SellPage() {
   return (
     <>
       <PageHeader
-        title="Sell units"
-        description="List units on the Found Fractional resale market. You set the price; when a buyer's payment is confirmed, Found pays you the proceeds less the resale fee."
-        actions={<Link href="/fractional/market" className="btn-outline"><ArrowLeftRight className="size-4" /> Resale market</Link>}
+        title="Transfer units"
+        description={FRACTIONAL_OPEN ? "Offer units to other investors, where SEC rules allow and after any lock-in period. You set the price; there may be no buyer. When a buyer's payment is confirmed, Found pays you the proceeds less the transfer fee." : "Transfers between investors aren't available while Found Fractional is in pre-launch."}
+        actions={<Link href="/fractional/market" className="btn-outline"><ArrowLeftRight className="size-4" /> Investor transfers</Link>}
       />
       <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
         <section className="card p-6">
           <h2 className="mb-4 font-semibold text-ink">New listing</h2>
-          <SellForm holdings={sellable} />
+          {FRACTIONAL_OPEN ? <SellForm holdings={sellable} /> : <p className="text-sm text-slate-500">Not available yet.</p>}
         </section>
         <section>
           <h2 className="mb-3 font-semibold text-ink">Your listings</h2>

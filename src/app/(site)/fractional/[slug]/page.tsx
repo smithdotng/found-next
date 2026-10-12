@@ -13,7 +13,7 @@ import { pageMetadata, absoluteUrl } from "@/lib/seo";
 import { formatDate, formatPrice, plainText, stateLabel } from "@/lib/format";
 import { getOfferingBySlug, getOfferingResales } from "@/lib/fractional-data";
 import {
-  ASSET_LABEL, OFFERING_STATUS, PAYOUT_LABEL, PUBLIC_STATUSES, RISK_META, STAGE_LABEL, TRADABLE_STATUSES, daysLeft, fundingProgress, isOpen, opensLater, unitsAvailable,
+  ASSET_LABEL, OFFERING_STATUS, PAYOUT_LABEL, PUBLIC_STATUSES, RISK_META, STAGE_LABEL, TRADABLE_STATUSES, FRACTIONAL_OPEN, daysLeft, fundingProgress, isOpen, opensLater, unitsAvailable,
 } from "@/lib/fractional";
 import { Gallery } from "@/components/property/gallery";
 import { ShareBar } from "@/components/property/share-bar";
@@ -21,13 +21,14 @@ import { FundingBar } from "@/components/fractional/offering-card";
 import { InvestWidget } from "@/components/fractional/invest-widget";
 import { ReturnsCalculator } from "@/components/fractional/returns-calculator";
 import { SmartImage } from "@/components/ui/smart-image";
+import { PrelaunchBanner, RiskStatement } from "@/components/fractional/regulatory-notice";
 
 export async function generateMetadata({ params }: PageProps<"/fractional/[slug]">): Promise<Metadata> {
   const { slug } = await params;
   const o = await getOfferingBySlug(slug);
   if (!o) return { title: "Offering not found" };
   return pageMetadata({
-    title: `${o.title} - Invest from ${formatPrice(o.unitPrice * (o.minUnits || 1))} | Found Fractional`,
+    title: `${o.title} | Found Fractional`,
     absoluteTitle: true,
     description: plainText(o.summary || o.description || "", 160),
     path: `/fractional/${o.slug}`,
@@ -54,7 +55,7 @@ export default async function OfferingPage({ params }: PageProps<"/fractional/[s
 
   await connectDB();
   const [resales, investorCount, myHolding, myOpen] = await Promise.all([
-    TRADABLE_STATUSES.includes(o.status) && o.resaleEnabled ? getOfferingResales(o._id) : Promise.resolve([]),
+    FRACTIONAL_OPEN && TRADABLE_STATUSES.includes(o.status) && o.resaleEnabled ? getOfferingResales(o._id) : Promise.resolve([]),
     FractionalHolding.countDocuments({ offering: o._id, units: { $gt: 0 } }),
     session.userId ? FractionalHolding.findOne({ offering: o._id, investor: session.userId }).select("units").lean<{ units: number }>() : null,
     session.userId
@@ -94,6 +95,7 @@ export default async function OfferingPage({ params }: PageProps<"/fractional/[s
           <Link href={`/dashboard/offerings/${o._id}`} className="font-semibold underline">Manage</Link>
         </div>
       ) : null}
+      <PrelaunchBanner />
       <div className="container-page py-6 sm:py-8">
         <nav aria-label="Breadcrumb" className="mb-4 flex items-center gap-1 text-xs text-slate-500">
           <Link href="/" className="hover:text-ink">Home</Link>
@@ -121,8 +123,8 @@ export default async function OfferingPage({ params }: PageProps<"/fractional/[s
 
             <dl className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
               <Tile icon={Wallet} label="Unit price" value={formatPrice(o.unitPrice)} />
-              <Tile icon={TrendingUp} label="Target yield" value={p.rentalYield ? `${p.rentalYield}% p.a.` : "—"} />
-              <Tile icon={Building2} label="Target growth" value={p.appreciation ? `${p.appreciation}% p.a.` : "—"} />
+              <Tile icon={TrendingUp} label="Target yield (not guaranteed)" value={p.rentalYield ? `${p.rentalYield}% p.a.` : "—"} />
+              <Tile icon={Building2} label="Target growth (not guaranteed)" value={p.appreciation ? `${p.appreciation}% p.a.` : "—"} />
               <Tile icon={Users} label="Investors" value={investorCount.toLocaleString()} />
             </dl>
 
@@ -177,7 +179,7 @@ export default async function OfferingPage({ params }: PageProps<"/fractional/[s
                 <p className="mt-3 font-medium text-ink">{dev?.developerProfile?.company || dev?.name}</p>
                 <dl className="mt-2 space-y-2 text-sm">
                   <Kv k="Projects completed" v={dev?.developerProfile?.projectsCompleted ? String(dev.developerProfile.projectsCompleted) : undefined} />
-                  <Kv k="Vetted by Found" v={dev?.developerProfile?.status === "approved" ? "Yes" : undefined} />
+                  <Kv k="Reviewed by Found" v={dev?.developerProfile?.status === "approved" ? "Yes (not an endorsement)" : undefined} />
                 </dl>
                 {dev?.developerProfile?.website ? (
                   <a href={dev.developerProfile.website} target="_blank" rel="noopener noreferrer nofollow" className="mt-3 inline-block text-sm font-medium text-brand-600 hover:underline">Website</a>
@@ -197,7 +199,7 @@ export default async function OfferingPage({ params }: PageProps<"/fractional/[s
               <ul className="mt-3 grid gap-3 text-sm sm:grid-cols-3">
                 <li className="rounded-xl bg-slate-50 p-4"><strong className="block text-lg text-ink">{o.fees.investor}%</strong> service fee, added when you buy units from the developer</li>
                 <li className="rounded-xl bg-slate-50 p-4"><strong className="block text-lg text-ink">{o.fees.management}%</strong> of rental income, for managing the property and payouts</li>
-                <li className="rounded-xl bg-slate-50 p-4"><strong className="block text-lg text-ink">{o.fees.resale}%</strong> of the sale price if you sell units on the resale market</li>
+                <li className="rounded-xl bg-slate-50 p-4"><strong className="block text-lg text-ink">{o.fees.resale}%</strong> of the price if you transfer units to another investor</li>
               </ul>
             </section>
 
@@ -230,8 +232,8 @@ export default async function OfferingPage({ params }: PageProps<"/fractional/[s
               <div className="mt-2 space-y-2 text-sm leading-6 text-amber-950/80">
                 {o.riskNotes ? <p className="whitespace-pre-line">{o.riskNotes}</p> : null}
                 <p>
-                  The value of the property and your units can fall as well as rise. Construction can be delayed or cost more than planned, rent isn&apos;t guaranteed, and you may not be able to
-                  sell your units when you want or at the price you want. Only invest money you can leave in for the full term.
+                  You could lose some or all of the money you invest. The value of the property and your units can fall as well as rise. Construction can be delayed or cost more than planned,
+                  rent and distributions are not guaranteed, and you may not be able to sell your units at all or at the price you want. Only invest money you can afford to lose and leave in for the full term.
                 </p>
               </div>
             </section>
@@ -259,8 +261,8 @@ export default async function OfferingPage({ params }: PageProps<"/fractional/[s
 
             {resales.length ? (
               <section id="resale" className="mt-10 scroll-mt-20">
-                <h2 className="flex items-center gap-2 text-xl font-bold text-ink"><ArrowLeftRight className="size-5" /> Units for resale</h2>
-                <p className="mt-1 text-sm text-slate-500">Existing investors selling some of their units. No service fee for buyers.</p>
+                <h2 className="flex items-center gap-2 text-xl font-bold text-ink"><ArrowLeftRight className="size-5" /> Units offered by investors</h2>
+                <p className="mt-1 text-sm text-slate-500">Units existing investors have offered to transfer. Prices are set by sellers and may not reflect value.</p>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
                   {resales.map((r) => {
                     const avail = r.units - r.unitsSold - r.unitsReserved;
@@ -310,7 +312,7 @@ export default async function OfferingPage({ params }: PageProps<"/fractional/[s
                 ) : TRADABLE_STATUSES.includes(o.status) ? (
                   <p className="text-sm text-slate-600">
                     This raise is closed.{" "}
-                    {resales.length ? <a href="#resale" className="font-medium text-brand-600 hover:underline">{resales.length} resale listing{resales.length > 1 ? "s" : ""} available</a> : "No units are for resale right now."}
+                    {resales.length ? <a href="#resale" className="font-medium text-brand-600 hover:underline">{resales.length} investor transfer offer{resales.length > 1 ? "s" : ""}</a> : "No units are offered for transfer."}
                   </p>
                 ) : (
                   <p className="flex items-start gap-2 text-sm text-slate-600"><Clock className="mt-0.5 size-4 shrink-0" /> Not open for investment.</p>
@@ -327,12 +329,14 @@ export default async function OfferingPage({ params }: PageProps<"/fractional/[s
               ) : null}
             </div>
             <ul className="mt-4 space-y-2 px-1 text-xs text-slate-500">
-              <li className="flex gap-2"><ShieldCheck className="size-4 shrink-0 text-emerald-600" /> Refunded in full if the minimum raise isn&apos;t reached</li>
+              <li className="flex gap-2"><ShieldCheck className="size-4 shrink-0 text-emerald-600" /> Subscription money is returned if the minimum raise isn&apos;t reached, per the offering terms</li>
               <li className="flex gap-2"><Landmark className="size-4 shrink-0 text-emerald-600" /> Units are shares in the property&apos;s own company</li>
+              <li className="flex gap-2"><AlertTriangle className="size-4 shrink-0 text-amber-600" /> Your capital is at risk</li>
               <li className="flex gap-2"><Eye className="size-4 shrink-0 text-slate-400" /> {(o.views ?? 0).toLocaleString()} views</li>
             </ul>
+            <RiskStatement className="mt-4 px-1" />
             <div className="mt-4">
-              <ShareBar url={absoluteUrl(`/fractional/${o.slug}`)} title={o.title} text={`Own a share of ${o.title} from ${formatPrice(o.unitPrice)} on Found Fractional`} />
+              <ShareBar url={absoluteUrl(`/fractional/${o.slug}`)} title={o.title} text={`${o.title} on Found Fractional`} />
             </div>
           </aside>
         </div>

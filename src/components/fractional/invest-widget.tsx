@@ -6,7 +6,7 @@ import { Minus, Plus, ShieldCheck } from "lucide-react";
 import { createOrder } from "@/app/actions/fractional";
 import { FormMessage, SubmitButton } from "@/components/ui/form-bits";
 import { formatPrice } from "@/lib/format";
-import { RESERVATION_HOURS, primaryQuote } from "@/lib/fractional";
+import { FRACTIONAL_OPEN, PRELAUNCH_NOTICE, RESERVATION_HOURS, primaryQuote } from "@/lib/fractional";
 
 /**
  * Buy units: from the developer (primary) or from one resale listing.
@@ -39,6 +39,13 @@ export function InvestWidget({
   const back = `/fractional/${slug}${resaleId ? "#resale" : "#invest"}`;
   const clamp = (v: number) => Math.min(maxUnits, Math.max(minUnits, Math.floor(v) || minUnits));
 
+  if (!FRACTIONAL_OPEN)
+    return (
+      <div className="space-y-3">
+        <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">{PRELAUNCH_NOTICE}</p>
+        <Link href={`/invest/register?next=${encodeURIComponent(back)}`} className="btn-primary w-full py-3">Register your interest</Link>
+      </div>
+    );
   if (maxUnits < minUnits) return <p className="text-sm text-slate-500">No units available right now.</p>;
 
   return (
@@ -71,7 +78,7 @@ export function InvestWidget({
       <dl className="space-y-1.5 rounded-xl bg-slate-50 p-3.5 text-sm">
         <div className="flex justify-between"><dt className="text-slate-600">{units} × {formatPrice(unitPrice)}</dt><dd className="font-medium">{formatPrice(q.amount)}</dd></div>
         {!resaleId ? <div className="flex justify-between"><dt className="text-slate-600">Found service fee ({feePercent}%)</dt><dd>{formatPrice(q.fee)}</dd></div> : null}
-        <div className="flex justify-between border-t border-slate-200 pt-1.5 text-base font-bold text-ink"><dt>You pay</dt><dd>{formatPrice(q.total)}</dd></div>
+        <div className="flex justify-between border-t border-slate-200 pt-1.5 text-base font-bold text-ink"><dt>Total payable</dt><dd>{formatPrice(q.total)}</dd></div>
       </dl>
 
       {signedIn ? (
@@ -79,23 +86,23 @@ export function InvestWidget({
           <label className="flex items-start gap-2 text-xs leading-5 text-slate-600">
             <input type="checkbox" name="agree" className="mt-0.5 size-4 shrink-0 rounded accent-brand-600" />
             <span>
-              I&apos;ve read the offering documents and understand that property investments can fall in value, returns aren&apos;t guaranteed and I may not be able to sell my units quickly.
+              I&apos;ve read the offering documents and risk warning. I understand I could lose some or all of the money I invest, target returns are not guaranteed, and I may not be able to sell my units.
             </span>
           </label>
           <FormMessage state={state} />
-          <SubmitButton pendingText="Reserving…">{resaleId ? "Buy these units" : "Reserve units"}</SubmitButton>
+          <SubmitButton pendingText="Reserving…">{resaleId ? "Request these units" : "Subscribe for units"}</SubmitButton>
           {!compact ? (
             <p className="flex items-start gap-1.5 text-xs text-slate-500">
               <ShieldCheck className="mt-0.5 size-3.5 shrink-0 text-emerald-600" />
-              We hold your units for {RESERVATION_HOURS} hours while you pay by bank transfer. Nothing is charged until you transfer.
+              Units are held for {RESERVATION_HOURS} hours while you pay into the offering&apos;s custodial account.
             </p>
           ) : null}
         </>
       ) : (
         <div className="space-y-2">
-          <Link href={`/invest/register?next=${encodeURIComponent(back)}`} className="btn-primary w-full py-3">Create investor account</Link>
+          <Link href={`/invest/register?next=${encodeURIComponent(back)}`} className="btn-primary w-full py-3">Create an account</Link>
           <Link href={`/login?next=${encodeURIComponent(back)}`} className="btn-outline w-full">I have a Found account</Link>
-          <p className="text-center text-xs text-slate-500">Any Found account can invest. It takes two minutes.</p>
+          <p className="text-center text-xs text-slate-500">You can use an existing Found account.</p>
         </div>
       )}
     </form>

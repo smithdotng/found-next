@@ -44,13 +44,13 @@ export function InvestorProfileForm({ defaults: d, next }: { defaults: Defaults;
 
       <div className="grid gap-4 sm:grid-cols-2">
         <TextField
-          label={`Annual income (₦)${category === "retail" ? "" : " — optional"}`}
+          label={`Net annual income (₦)${category === "retail" ? "" : " — optional"}`}
           name="annualIncome"
           inputMode="numeric"
           defaultValue={d.annualIncome ? String(d.annualIncome) : ""}
           required={category === "retail"}
           error={e("annualIncome")}
-          hint="Approximate, before tax. Kept private."
+          hint="Your approximate net income for the year. Kept private."
         />
         <TextField label="Occupation" name="occupation" defaultValue={d.occupation} required error={e("occupation")} />
       </div>
@@ -103,8 +103,8 @@ export function InvestorProfileForm({ defaults: d, next }: { defaults: Defaults;
       <label className="flex items-start gap-2 rounded-xl bg-amber-50/70 p-3 text-sm text-slate-700">
         <input type="checkbox" name="risk" defaultChecked={d.riskAcknowledged} className="mt-0.5 size-4 shrink-0 rounded accent-brand-600" />
         <span>
-          I understand that property investments on Found Fractional are not deposits, are not guaranteed, can fall in value, and may be hard to sell. I&apos;ll only invest money I can leave in for the
-          full term.
+          I understand that investments on Found Fractional are not bank deposits, are not insured or guaranteed, can fall in value, and may be impossible to sell. I could lose some or all of the
+          money I invest, and I&apos;ll only invest money I can afford to lose.
         </span>
       </label>
       {e("risk") ? <p className="-mt-4 text-xs text-rose-600">{e("risk")}</p> : null}
