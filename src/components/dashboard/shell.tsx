@@ -20,7 +20,7 @@ type Counts = { approvals: number; inquiries: number; bookings: number; hosts: n
 const INVEST_ITEMS: NavItem[] = [
   { href: "/dashboard/investments", label: "My investments", icon: PieChart, exact: true },
   { href: "/fractional", label: "Browse offerings", icon: Layers, exact: true },
-  { href: "/dashboard/investments/sell", label: "Sell units", icon: ArrowLeftRight },
+  { href: "/dashboard/investments/sell", label: "Transfer units", icon: ArrowLeftRight },
   { href: "/dashboard/investments/profile", label: "Investor profile", icon: ShieldCheck },
 ];
 

@@ -22,7 +22,7 @@ export default async function InvestmentsPage() {
       <PageHeader
         title={session.userType === "investor" ? `Hello, ${first}` : "My investments"}
         description="Your Found Fractional portfolio: properties you own a share of, payouts and orders."
-        actions={<Link href="/fractional" className="btn-primary"><Layers className="size-4" /> Browse offerings</Link>}
+        actions={<Link href="/fractional" className="btn-primary"><Layers className="size-4" /> Offerings</Link>}
       />
 
       {kyc !== "approved" ? (
@@ -72,7 +72,7 @@ export default async function InvestmentsPage() {
       <section className="mt-8">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="font-semibold text-ink">Holdings</h2>
-          {p.holdings.length ? <Link href="/dashboard/investments/sell" className="text-sm font-medium text-brand-600 hover:underline"><ArrowLeftRight className="mr-1 inline size-3.5" />Sell units</Link> : null}
+          {p.holdings.length ? <Link href="/dashboard/investments/sell" className="text-sm font-medium text-brand-600 hover:underline"><ArrowLeftRight className="mr-1 inline size-3.5" />Transfer units</Link> : null}
         </div>
         {p.holdings.length ? (
           <div className="card overflow-hidden">

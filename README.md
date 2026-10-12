@@ -111,9 +111,14 @@ Rules worth knowing:
 New collections: `fractionalofferings`, `fractionalorders`, `fractionalholdings`, `fractionaldistributions`, `fractionalresales`.
 The Express app's User schema doesn't know the `investor`/`developer` types, so those accounts should use the Next.js app.
 
-> **Regulatory note.** Offering fractional units to the public is regulated by the SEC (Investments and Securities Act 2025 and the
-> SEC crowdfunding / collective investment rules). Confirm the licensing route (e.g. crowdfunding portal registration or partnering
-> with a registered portal/trustee), the retail limit and investor disclosures with counsel before the first offering goes live.
+> **Regulatory note / pre-launch mode.** Offering fractional units to the public is regulated by the SEC under the
+> Investments and Securities Act 2025 (investment contracts are securities; unregistered collective investment schemes are
+> prohibited) and the SEC crowdfunding rules (registered intermediaries only, 10% of net annual income limit for retail
+> investors, issuer caps, a one-year lock-in, and no intermediary-facilitated secondary trading). Until Found or a partner
+> intermediary is registered, the site runs in **pre-launch mode**: offerings can be previewed and interest registered, but no
+> units can be reserved, paid for or transferred, and every page carries a pre-launch and risk notice. Set
+> `NEXT_PUBLIC_FRACTIONAL_OPEN=1` (and rebuild) only after registration and counsel sign-off, and re-check the transfer feature
+> against the lock-in and secondary-trading rules first.
 
 ## Photo storage (Cloudflare R2)
 

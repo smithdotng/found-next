@@ -70,7 +70,7 @@ export default async function ManageOfferingPage({ params }: PageProps<"/dashboa
           {["live", "funded", "active", "exited"].includes(o.status) ? (
             <section className="card p-6">
               <h2 className="font-semibold text-ink">Post a progress update</h2>
-              <p className="mb-4 text-sm text-slate-500">Updates appear on the offering page. Regular updates keep investors confident and the resale market healthy.</p>
+              <p className="mb-4 text-sm text-slate-500">Updates appear on the offering page. Investors rely on accurate, regular updates; never describe targets as guaranteed.</p>
               <UpdateForm offeringId={o._id} />
               {o.updates?.length ? (
                 <ul className="mt-6 divide-y divide-slate-100 border-t border-slate-100 text-sm">

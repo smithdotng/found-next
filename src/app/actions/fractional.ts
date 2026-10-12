@@ -13,7 +13,7 @@ import { adminEmail, apartmentEmail, sendMail } from "@/lib/mailer";
 import { PAYMENT_ACCOUNT } from "@/lib/verification";
 import { investedLast12Months, isId, releaseReservation } from "@/lib/fractional-data";
 import {
-  DEFAULT_FEES, RESERVATION_HOURS, RETAIL_ANNUAL_LIMIT_PERCENT, TRADABLE_STATUSES, isOpen, primaryQuote, resaleProceeds, splitDistribution,
+  DEFAULT_FEES, FRACTIONAL_OPEN, RESERVATION_HOURS, RETAIL_ANNUAL_LIMIT_PERCENT, TRADABLE_STATUSES, isOpen, primaryQuote, resaleProceeds, splitDistribution,
 } from "@/lib/fractional";
 import type { FormState } from "./public";
 
@@ -79,7 +79,7 @@ export async function registerInvestor(_prev: FormState, fd: FormData): Promise<
   });
   mail(email, "Welcome to Found Fractional", {
     heading: `Welcome, ${name.split(" ")[0]}`,
-    intro: "You can now own a share of carefully vetted Nigerian property, starting from the price of one unit. Complete your investor profile once and you're ready to invest in any offering.",
+    intro: "Thanks for registering your interest in Found Fractional. Complete your investor profile now and we'll let you know as soon as offerings open. Found Fractional isn't open for investment yet and no money is being accepted.",
     cta: { label: "Complete your investor profile", href: "/dashboard/investments/profile" },
   });
   await signIn({ _id: user._id, userType: "investor", name, email });
@@ -212,6 +212,7 @@ export async function createOrder(_prev: FormState, fd: FormData): Promise<FormS
   const resaleId = s(fd, "resaleId");
   const back = s(fd, "back") || "/fractional";
   if (!session.userId) redirect(`/login?next=${encodeURIComponent(back)}`);
+  if (!FRACTIONAL_OPEN) return { ok: false, message: "Found Fractional isn't open for investment yet. We'll email you when it is." };
   if (session.userType === "admin") return { ok: false, message: "Admin accounts can't invest. Sign in with an investor account." };
   const units = Math.floor(n(fd, "units") ?? 0);
   if (!isId(offeringId) || (resaleId && !isId(resaleId))) return { ok: false, message: "This offering is no longer available." };
@@ -284,7 +285,7 @@ export async function createOrder(_prev: FormState, fd: FormData): Promise<FormS
 
   const acct = !resale && offering.paymentAccount?.accountNumber ? offering.paymentAccount : { bankName: PAYMENT_ACCOUNT.bank, accountName: PAYMENT_ACCOUNT.accountName, accountNumber: PAYMENT_ACCOUNT.accountNumber };
   mail(user.email, `Your ${units} units in ${offering.title} are reserved`, {
-    heading: "Units reserved — complete your transfer",
+    heading: "Units reserved — payment details",
     intro: `We're holding ${units} units for you for ${RESERVATION_HOURS} hours. Transfer the amount below and tell us once you've paid, and we'll confirm your units.`,
     rows: [
       ["Order", order.reference],
@@ -356,6 +357,7 @@ export async function listUnitsForSale(_prev: FormState, fd: FormData): Promise<
   const offeringId = s(fd, "offeringId");
   const units = Math.floor(n(fd, "units") ?? 0);
   const price = Math.round(n(fd, "pricePerUnit") ?? 0);
+  if (!FRACTIONAL_OPEN) return { ok: false, message: "Transfers between investors aren't available yet." };
   if (!isId(offeringId)) return { ok: false, message: "Choose a holding." };
   if (units < 1) return { ok: false, message: "Enter how many units to sell.", errors: { units: "At least 1" } };
   await connectDB();

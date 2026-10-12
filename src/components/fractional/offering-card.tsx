@@ -50,7 +50,7 @@ export function OfferingCard({ o }: { o: OfferingDoc }) {
             <dd className="mt-0.5 font-bold text-ink">{formatPrice(o.unitPrice * (o.minUnits || 1))}</dd>
           </div>
           <div className="rounded-xl bg-slate-50 p-3">
-            <dt className="flex items-center gap-1 text-xs text-slate-500"><TrendingUp className="size-3.5" /> Target return</dt>
+            <dt className="flex items-center gap-1 text-xs text-slate-500"><TrendingUp className="size-3.5" /> Target, not guaranteed</dt>
             <dd className="mt-0.5 font-bold text-ink">
               {p.rentalYield ? `${p.rentalYield}% yield` : p.appreciation ? `${p.appreciation}% p.a.` : "—"}
               {p.rentalYield && p.appreciation ? <span className="font-medium text-slate-500"> + {p.appreciation}%</span> : null}

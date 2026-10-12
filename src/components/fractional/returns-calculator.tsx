@@ -27,8 +27,8 @@ export function ReturnsCalculator({
   const bar = (v: number) => `${Math.max(2, Math.min(100, (v / Math.max(1, r.endValue + r.income)) * 100))}%`;
   return (
     <div className="card p-6">
-      <h3 className="font-semibold text-ink">What could {units} units earn?</h3>
-      <p className="mt-1 text-sm text-slate-500">Using the developer&apos;s targets over {r.years % 1 ? r.years.toFixed(1) : r.years} years. An illustration, not a promise.</p>
+      <h3 className="font-semibold text-ink">Scenario illustration for {units} units</h3>
+      <p className="mt-1 text-sm text-slate-500">What the developer&apos;s targets would mean over {r.years % 1 ? r.years.toFixed(1) : r.years} years if they were met exactly. This is not a forecast or a promise.</p>
       <div className="mt-4 flex flex-wrap gap-2">
         {Array.from(new Set(presets)).map((p) => (
           <button key={p} type="button" onClick={() => setUnits(p)} className={units === p ? "btn-primary btn-sm" : "btn-outline btn-sm"}>
@@ -39,18 +39,22 @@ export function ReturnsCalculator({
       <input type="range" min={minUnits} max={Math.max(50, minUnits * 10)} value={units} onChange={(e) => setUnits(Number(e.target.value))} className="mt-4 w-full accent-brand-600" aria-label="Units" />
       <dl className="mt-4 space-y-3 text-sm">
         <Row label="You invest" value={formatPrice(invested)} width={bar(invested)} tone="bg-slate-300" />
-        {rentalYield ? <Row label={`Rental income (${r.netYield.toFixed(1)}% a year after fees)`} value={formatPrice(r.income)} width={bar(r.income)} tone="bg-emerald-400" /> : null}
-        {appreciation ? <Row label={`Growth in value (${appreciation}% a year)`} value={formatPrice(r.growth)} width={bar(r.growth)} tone="bg-brand-400" /> : null}
+        {rentalYield ? <Row label={`Rent at target (${r.netYield.toFixed(1)}% a year after fees)`} value={formatPrice(r.income)} width={bar(r.income)} tone="bg-emerald-400" /> : null}
+        {appreciation ? <Row label={`Value change at target (${appreciation}% a year)`} value={formatPrice(r.growth)} width={bar(r.growth)} tone="bg-brand-400" /> : null}
       </dl>
       <div className="mt-5 flex items-end justify-between border-t border-slate-200 pt-4">
-        <span className="text-sm text-slate-600">Projected total return</span>
+        <span className="text-sm text-slate-600">If every target is met</span>
         <span className="text-right">
           <span className="block text-2xl font-bold text-ink">{formatPrice(r.total)}</span>
           <span className="text-xs font-semibold text-emerald-700">+{r.totalPct}% on {formatPrice(invested)}</span>
         </span>
       </div>
-      <p className="mt-3 text-[11px] leading-4 text-slate-400">
-        Projections are the developer&apos;s targets reviewed by Found. Actual rent, costs, completion dates and sale prices can differ, and you could get back less than you invest.
+      <div className="mt-3 flex items-end justify-between rounded-xl bg-rose-50 px-3 py-2.5">
+        <span className="text-sm text-rose-900">If the property earns no rent and falls 30% in value</span>
+        <span className="text-right text-sm font-bold text-rose-700">−{formatPrice(Math.round(invested * 0.3))}</span>
+      </div>
+      <p className="mt-3 text-xs leading-5 text-slate-500">
+        Targets are set by the developer and are not guaranteed by the developer or Found. Actual rent, costs, completion dates and sale prices will differ, returns could be nil, and you could lose some or all of the money you invest.
       </p>
     </div>
   );
