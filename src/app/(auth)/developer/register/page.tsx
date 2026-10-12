@@ -4,9 +4,9 @@ import { pageMetadata } from "@/lib/seo";
 import { DeveloperRegisterForm } from "./developer-register-form";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Apply to Raise Capital - Found Fractional for Developers",
+  title: "Developer Application - Found Fractional (Pre-launch)",
   absoluteTitle: true,
-  description: "Apply to raise capital for your real estate project from Found Fractional investors.",
+  description: "Apply to have your company and project reviewed for Found Fractional ahead of launch. No capital is being raised yet.",
   path: "/developer/register",
 });
 
@@ -14,10 +14,10 @@ export default function DeveloperRegisterPage() {
   return (
     <>
       <p className="text-sm font-semibold text-coral-500">Found Fractional for developers</p>
-      <h1 className="mt-1 text-3xl font-bold tracking-tight text-ink">Apply to raise capital</h1>
+      <h1 className="mt-1 text-3xl font-bold tracking-tight text-ink">Apply for review</h1>
       <p className="mt-2 text-slate-600">
-        Tell us about your company. We vet every developer before their offerings go live.{" "}
-        <Link href="/fractional/developers" className="font-medium text-brand-600 hover:underline">How raising works</Link>
+        Tell us about your company. Found Fractional is in pre-launch, so no capital can be raised yet; we review developers now so projects are ready when it opens.{" "}
+        <Link href="/fractional/developers" className="font-medium text-brand-600 hover:underline">How it would work</Link>
       </p>
       <div className="mt-8">
         <DeveloperRegisterForm />

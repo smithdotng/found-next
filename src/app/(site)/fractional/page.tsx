@@ -86,7 +86,7 @@ export default async function FractionalPage({ searchParams }: PageProps<"/fract
               ) : (
                 <Link href="/invest/register" className="btn-accent px-6 py-3 text-base">Register your interest <ArrowRight className="size-4" /></Link>
               )}
-              <Link href="/fractional/developers" className="btn bg-white/10 px-6 py-3 text-base text-white ring-1 ring-white/25 hover:bg-white/20">Raise capital as a developer</Link>
+              <Link href="/fractional/developers" className="btn bg-white/10 px-6 py-3 text-base text-white ring-1 ring-white/25 hover:bg-white/20">For developers</Link>
             </div>
           </div>
           {stats.offerings ? (
