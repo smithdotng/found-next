@@ -4,7 +4,6 @@ import { PageHero } from "@/components/site/page-hero";
 import { FaqList } from "@/components/site/faq-list";
 import { FAQS } from "@/lib/faqs";
 import { pageMetadata } from "@/lib/seo";
-import { ContactForm } from "./contact-form";
 
 export const metadata: Metadata = pageMetadata({
   title: "Contact Us - Found Properties",
@@ -16,22 +15,16 @@ export const metadata: Metadata = pageMetadata({
 export default function ContactPage() {
   return (
     <>
-      <PageHero eyebrow="We're here to help" title="Contact us" lead="Questions about a listing, your account or partnering with us? Drop us a line." crumbs={[{ label: "Contact" }]} />
-      <div className="container-page grid gap-10 py-14 lg:grid-cols-[1fr_1.3fr]">
-        <div className="space-y-4">
-          <Info icon={Phone} title="Phone" lines={[<a key="p" href="tel:+2349092357149" className="hover:text-brand-600">+234 909 235 7149</a>]} />
+      <PageHero eyebrow="We're here to help" title="Contact us" lead="Questions about a listing, your account or partnering with us? Reach us directly and we'll get back to you." crumbs={[{ label: "Contact" }]} />
+      <div className="container-page py-14">
+        <div className="mx-auto grid max-w-3xl gap-4 sm:grid-cols-2">
+          <Info icon={Phone} title="Phone / WhatsApp" lines={[<a key="p" href="tel:+2349092357149" className="hover:text-brand-600">+234 909 235 7149</a>]} />
           <Info icon={Mail} title="Email" lines={[<a key="e" href="mailto:hello@found.ng" className="hover:text-brand-600">hello@found.ng</a>]} />
           <Info icon={MapPin} title="Office" lines={["Suite 5 Gwandal Centre", "1015 Frai Close, Wuse 2", "Abuja, Nigeria"]} />
           <Info icon={Clock} title="Response time" lines={["We aim to respond within 24 hours on business days."]} />
         </div>
-        <div className="card p-6 sm:p-8">
-          <h2 className="text-xl font-bold text-ink">Send us a message</h2>
-          <div className="mt-6">
-            <ContactForm />
-          </div>
-        </div>
       </div>
-      <section className="container-page max-w-3xl pb-10">
+      <section className="container-page max-w-3xl pb-16">
         <h2 className="mb-6 text-2xl font-bold text-ink">Quick answers</h2>
         <FaqList items={FAQS.slice(6)} />
       </section>

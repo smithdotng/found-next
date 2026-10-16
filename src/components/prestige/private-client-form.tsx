@@ -1,22 +1,24 @@
 "use client";
 
-import { useActionState, useRef, useTransition } from "react";
+import { useActionState, useRef, useState, useTransition } from "react";
 import clsx from "clsx";
-import { CheckCircle2, Loader2, Lock } from "lucide-react";
-import { requestPrivateClient } from "@/app/actions/prestige";
+import { CheckCircle2, Loader2, Lock, MailCheck } from "lucide-react";
+import { requestPrivateClient, type PrestigeState } from "@/app/actions/prestige";
 import { BUDGET_BANDS, CLIENT_INTERESTS, PAYMENT_ROUTES, PRESTIGE_LOCATIONS, TIMELINES } from "@/lib/prestige";
-
-type State = { ok: boolean; message: string; errors?: Record<string, string> } | null;
 
 const input =
   "w-full rounded-xl border border-white/15 bg-white/[0.06] px-4 py-3 text-[15px] text-white placeholder:text-white/35 outline-none transition focus:border-[#c8a96a] focus:bg-white/[0.09]";
 const label = "mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-white/55";
 
 export function PrivateClientForm({ partner, propertyId, propertyTitle }: { partner?: string; propertyId?: string; propertyTitle?: string }) {
-  const [state, dispatch] = useActionState<State, FormData>(requestPrivateClient, null);
+  const [state, dispatch] = useActionState<PrestigeState, FormData>(requestPrivateClient, null);
   const [pending, start] = useTransition();
+  const [collected, setCollected] = useState<[string, string][]>([]);
+  const [editing, setEditing] = useState(false);
   const ref = useRef<HTMLFormElement>(null);
   const err = (k: string) => state?.errors?.[k];
+
+  const showVerify = state?.stage === "verify" && !editing;
 
   if (state?.ok)
     return (
@@ -27,6 +29,62 @@ export function PrivateClientForm({ partner, propertyId, propertyTitle }: { part
       </div>
     );
 
+  // ---- Step 2: verify the emailed code ----
+  if (showVerify) {
+    const fdFromCollected = () => {
+      const fd = new FormData();
+      collected.forEach(([k, v]) => fd.append(k, v));
+      return fd;
+    };
+    return (
+      <div className="space-y-5">
+        <div className="flex items-start gap-3 rounded-2xl border border-[#c8a96a]/30 bg-[#c8a96a]/10 p-4">
+          <MailCheck className="mt-0.5 size-5 shrink-0 text-[#c8a96a]" />
+          <p className="text-sm text-[#e9d9b6]">{state?.message}</p>
+        </div>
+        <form
+          noValidate
+          onSubmit={(e) => {
+            e.preventDefault();
+            const fd = new FormData(e.currentTarget);
+            start(() => dispatch(fd));
+          }}
+          className="space-y-5"
+        >
+          {collected.map(([k, v], i) => (
+            <input key={`${k}-${i}`} type="hidden" name={k} value={v} />
+          ))}
+          <div>
+            <label className={label} htmlFor="pc-code">Verification code</label>
+            <input
+              id="pc-code"
+              name="code"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              placeholder="6-digit code"
+              className={clsx(input, "tracking-[0.5em]", err("code") && "border-rose-400/70")}
+              aria-invalid={!!err("code")}
+            />
+            {err("code") ? <p className="mt-1 text-xs text-rose-300">{err("code")}</p> : null}
+          </div>
+          <button type="submit" disabled={pending} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#c8a96a] px-6 py-4 text-[15px] font-semibold text-[#0b1622] transition hover:bg-[#d6b97d] disabled:opacity-70">
+            {pending ? <Loader2 className="size-4 animate-spin" /> : <Lock className="size-4" />} Verify &amp; send request
+          </button>
+        </form>
+        <div className="flex items-center justify-between text-sm">
+          <button type="button" disabled={pending} onClick={() => start(() => dispatch(fdFromCollected()))} className="text-[#c8a96a] underline-offset-2 hover:underline disabled:opacity-60">
+            Resend code
+          </button>
+          <button type="button" onClick={() => { setEditing(true); }} className="text-white/55 underline-offset-2 hover:text-white/80 hover:underline">
+            Use a different email
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ---- Step 1: collect the enquiry details ----
   return (
     <form
       ref={ref}
@@ -34,6 +92,8 @@ export function PrivateClientForm({ partner, propertyId, propertyTitle }: { part
       onSubmit={(e) => {
         e.preventDefault();
         const fd = new FormData(e.currentTarget);
+        setCollected([...fd.entries()].filter(([, v]) => typeof v === "string") as [string, string][]);
+        setEditing(false);
         start(() => dispatch(fd));
       }}
       className="space-y-5"
@@ -84,7 +144,8 @@ export function PrivateClientForm({ partner, propertyId, propertyTitle }: { part
         <span>Found may contact me about this request. My details stay confidential and are never shared with a seller or realtor without my permission.</span>
       </label>
       {err("consent") ? <p className="-mt-3 text-xs text-rose-300">{err("consent")}</p> : null}
-      {state && !state.ok ? <p className="rounded-xl bg-rose-500/15 px-4 py-3 text-sm text-rose-200">{state.message}</p> : null}
+      <p className="text-xs text-white/45">We&apos;ll email you a 6-digit code to confirm your address before your request is sent.</p>
+      {state && !state.ok && !state.stage ? <p className="rounded-xl bg-rose-500/15 px-4 py-3 text-sm text-rose-200">{state.message}</p> : null}
 
       <button type="submit" disabled={pending} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#c8a96a] px-6 py-4 text-[15px] font-semibold text-[#0b1622] transition hover:bg-[#d6b97d] disabled:opacity-70">
         {pending ? <Loader2 className="size-4 animate-spin" /> : <Lock className="size-4" />} Request a private consultation

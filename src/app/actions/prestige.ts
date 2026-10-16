@@ -1,20 +1,29 @@
 "use server";
 
+import { createHash, randomInt } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { connectDB } from "@/lib/db";
-import { PrivateClient, Property } from "@/lib/models";
+import { EmailVerification, PrivateClient, Property } from "@/lib/models";
 import { requireUser } from "@/lib/session";
 import { EMAIL_RE } from "@/lib/format";
 import { adminEmail, apartmentEmail, sendMail } from "@/lib/mailer";
 import { BUDGET_BANDS, CLIENT_INTERESTS, PAYMENT_ROUTES, TIMELINES, labelOf } from "@/lib/prestige";
-import type { FormState } from "./public";
+
+/** Prestige enquiry form state. `stage: "verify"` tells the form to ask for the emailed code. */
+export type PrestigeState =
+  | { ok: boolean; message: string; errors?: Record<string, string>; stage?: "collect" | "verify"; email?: string }
+  | null;
 
 const s = (fd: FormData, k: string) => String(fd.get(k) ?? "").trim();
 const PHONE = /^\+?[\d\s()-]{7,20}$/;
+const PURPOSE = "prestige";
+const CODE_TTL_MS = 15 * 60 * 1000;
+const MAX_ATTEMPTS = 5;
 
-/** Public: a private client asks Found's concierge for help. */
-export async function requestPrivateClient(_prev: FormState, fd: FormData): Promise<FormState> {
-  if (s(fd, "website")) return { ok: true, message: "Thank you." }; // honeypot
+const hashCode = (code: string, email: string) => createHash("sha256").update(`${email}:${code}`).digest("hex");
+
+/** Validate the enquiry fields shared by both stages. */
+function validate(fd: FormData) {
   const name = s(fd, "name");
   const email = s(fd, "email").toLowerCase();
   const phone = s(fd, "phone");
@@ -24,9 +33,63 @@ export async function requestPrivateClient(_prev: FormState, fd: FormData): Prom
   if (!PHONE.test(phone)) errors.phone = "Enter a phone number we can reach you on (include the country code if outside Nigeria)";
   if (!s(fd, "interest")) errors.interest = "Tell us what you're looking for";
   if (!fd.get("consent")) errors.consent = "Please confirm we may contact you";
+  return { name, email, phone, errors };
+}
+
+/**
+ * Public: a private client asks Found's concierge for help.
+ * Two stages in one action: first submit (no `code`) emails a verification code;
+ * the second submit (with `code`) verifies the email, then creates the enquiry and notifies.
+ */
+export async function requestPrivateClient(_prev: PrestigeState, fd: FormData): Promise<PrestigeState> {
+  if (s(fd, "website")) return { ok: true, message: "Thank you." }; // honeypot
+
+  const { name, email, phone, errors } = validate(fd);
   if (Object.keys(errors).length) return { ok: false, message: "Please check the highlighted fields.", errors };
 
   await connectDB();
+  const code = s(fd, "code");
+
+  // ---- Stage 1: no code yet — send a verification code to the email ----
+  if (!code) {
+    const otp = String(randomInt(0, 1_000_000)).padStart(6, "0");
+    await EmailVerification.findOneAndUpdate(
+      { email, purpose: PURPOSE },
+      { $set: { codeHash: hashCode(otp, email), attempts: 0, expiresAt: new Date(Date.now() + CODE_TTL_MS), createdAt: new Date() } },
+      { upsert: true },
+    );
+    const sent = await sendMail(
+      email,
+      "Your Found Prestige verification code",
+      apartmentEmail({
+        brand: "found",
+        heading: "Verify your email to send your request",
+        intro: `Enter this code on the Found Prestige page to send your private consultation request. It expires in 15 minutes.`,
+        rows: [["Your verification code", otp]],
+        note: "If you didn't request this, you can safely ignore this email — nothing will be sent.",
+      }),
+    );
+    if (!sent) return { ok: false, message: "We couldn't send your verification email just now. Please try again in a moment." };
+    return { ok: false, stage: "verify", email, message: `We've sent a 6-digit code to ${email}. Enter it below to send your request.` };
+  }
+
+  // ---- Stage 2: verify the code, then create the enquiry ----
+  const record = await EmailVerification.findOne({ email, purpose: PURPOSE });
+  if (!record || record.expiresAt < new Date()) {
+    if (record) await EmailVerification.deleteOne({ _id: record._id });
+    return { ok: false, stage: "verify", email, message: "That code has expired. Request a new one." };
+  }
+  if (record.attempts >= MAX_ATTEMPTS) {
+    await EmailVerification.deleteOne({ _id: record._id });
+    return { ok: false, stage: "verify", email, message: "Too many attempts. Request a new code." };
+  }
+  if (record.codeHash !== hashCode(code, email)) {
+    await EmailVerification.updateOne({ _id: record._id }, { $inc: { attempts: 1 } });
+    return { ok: false, stage: "verify", email, message: `Enter the 6-digit code we sent to ${email}.`, errors: { code: "Incorrect code. Check your email and try again." } };
+  }
+  // Verified — consume the code so it can't be reused.
+  await EmailVerification.deleteOne({ _id: record._id });
+
   const propertyId = s(fd, "propertyId");
   const property = /^[a-f0-9]{24}$/i.test(propertyId) ? await Property.findById(propertyId).select("title slug").lean<{ _id: string; title: string; slug: string }>() : null;
   const doc = await PrivateClient.create({
@@ -64,7 +127,7 @@ export async function requestPrivateClient(_prev: FormState, fd: FormData): Prom
     apartmentEmail({
       brand: "found",
       heading: "New Found Prestige private client",
-      intro: "A private client has asked the concierge for help. Please call them within one working day.",
+      intro: "A private client has asked the concierge for help (email verified). Please call them within one working day.",
       rows,
       note: doc.message ? `Their note: ${doc.message}` : undefined,
       cta: { label: "Open private clients", href: "/dashboard/private-clients" },
