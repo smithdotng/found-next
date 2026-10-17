@@ -7,6 +7,7 @@ import { PropertyGrid } from "@/components/property/property-card";
 import { SmartImage } from "@/components/ui/smart-image";
 import { getHomeData } from "@/lib/queries";
 import { pageMetadata } from "@/lib/seo";
+import { areaPath } from "@/lib/locations";
 import { formatDate, formatPrice, locationLine, PROPERTY_TYPES } from "@/lib/format";
 
 
@@ -54,13 +55,20 @@ export default async function HomePage() {
             <HeroSearch />
           </div>
           <div className="mt-6 flex flex-wrap gap-2 text-xs">
-            {["Lekki", "Wuse 2", "Maitama", "Ikoyi", "Port Harcourt", "Gwarinpa"].map((q) => (
+            {([
+              ["Lekki", "Lagos"],
+              ["Wuse 2", "Abuja"],
+              ["Maitama", "Abuja"],
+              ["Ikoyi", "Lagos"],
+              ["Port Harcourt", "Rivers"],
+              ["Gwarinpa", "Abuja"],
+            ] as const).map(([city, state]) => (
               <Link
-                key={q}
-                href={`/properties?search=${encodeURIComponent(q)}`}
+                key={city}
+                href={areaPath(state, city)!}
                 className="rounded-full bg-white/10 px-3 py-1.5 font-medium text-white/90 ring-1 ring-white/15 backdrop-blur transition hover:bg-white/20"
               >
-                {q}
+                {city}
               </Link>
             ))}
           </div>

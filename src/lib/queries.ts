@@ -3,6 +3,7 @@ import { cache } from "react";
 import { connectDB, toPlain } from "./db";
 import { Blog, FeaturedProperty, Project, Property } from "./models";
 import { escapeRegex } from "./format";
+import { slugify } from "./locations";
 import type { BlogDoc, ProjectDoc, PropertyDoc } from "./types";
 
 export const PAGE_SIZE = 12;
@@ -114,6 +115,24 @@ export const getPublicProperty = cache(async (slug: string) => {
   const p = await Property.findOne({ slug }).populate("owner", "name email phone profileImage realtorProfile").lean();
   return p ? toPlain<PropertyDoc>(p) : null;
 });
+
+/** Resolve an area URL slug to the real city name for a state, but only if it has live listings. */
+export async function findCityInState(state: string, areaSlug: string) {
+  await connectDB();
+  const cities = (await Property.distinct("location.city", { status: "available", "location.state": state })) as string[];
+  const slug = slugify(areaSlug);
+  return cities.find((c) => c && slugify(c) === slug) ?? null;
+}
+
+/** Every state+city that has live listings — powers the location pages' sitemap entries. */
+export async function listAreasWithListings(): Promise<{ state: string; city: string; count: number }[]> {
+  await connectDB();
+  const rows = (await Property.aggregate([
+    { $match: { status: "available", "location.state": { $nin: [null, ""] }, "location.city": { $nin: [null, ""] } } },
+    { $group: { _id: { state: "$location.state", city: "$location.city" }, count: { $sum: 1 } } },
+  ])) as { _id: { state: string; city: string }; count: number }[];
+  return rows.map((r) => ({ state: r._id.state, city: r._id.city, count: r.count }));
+}
 
 export async function getSimilarProperties(p: PropertyDoc) {
   await connectDB();

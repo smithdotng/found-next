@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 import { connectDB } from "@/lib/db";
 import { Blog, FractionalOffering, Project, Property } from "@/lib/models";
+import { listAreasWithListings } from "@/lib/queries";
+import { areaPath } from "@/lib/locations";
 import { siteUrl } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -46,6 +48,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     for (const b of blogs as Row[]) if (b.slug) out.push({ url: `${base}/blog/${b.slug}`, lastModified: b.updatedAt, changeFrequency: "monthly", priority: 0.6 });
     for (const pr of projects as Row[]) if (pr.slug) out.push({ url: `${base}/projects/${pr.slug}`, lastModified: pr.updatedAt, changeFrequency: "weekly", priority: 0.7 });
     for (const f of offerings as Row[]) if (f.slug) out.push({ url: `${base}/fractional/${f.slug}`, lastModified: f.updatedAt, changeFrequency: "daily", priority: 0.8 });
+
+    // Location pages: /<state>/<area> for every area that has live listings.
+    for (const a of await listAreasWithListings()) {
+      const path = areaPath(a.state, a.city);
+      if (path) out.push({ url: base + path, changeFrequency: "daily", priority: 0.75 });
+    }
   } catch (e) {
     console.error("XML sitemap error:", e);
   }
