@@ -7,7 +7,7 @@ import { PropertyGrid } from "@/components/property/property-card";
 import { SmartImage } from "@/components/ui/smart-image";
 import { getHomeData } from "@/lib/queries";
 import { pageMetadata } from "@/lib/seo";
-import { formatDate, formatPrice, locationLine, PROPERTY_TYPES } from "@/lib/format";
+import { formatDate, formatPrice, locationLine, plainText, PROPERTY_TYPES } from "@/lib/format";
 
 
 // Same title/description/OG copy the Express home route set.
@@ -136,7 +136,7 @@ export default async function HomePage() {
                     </span>
                   ) : null}
                   <h3 className="text-xl font-bold">{f.title}</h3>
-                  {f.description ? <p className="mt-1 line-clamp-2 text-sm text-white/80">{f.description}</p> : null}
+                  {f.description ? <p className="mt-1 line-clamp-2 text-sm text-white/80">{plainText(f.description, 200)}</p> : null}
                   <p className="mt-3 text-sm font-semibold">
                     {formatPrice(f.property!.price)} · {locationLine(f.property!.location)}
                   </p>
