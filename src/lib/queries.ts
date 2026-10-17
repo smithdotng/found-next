@@ -3,7 +3,7 @@ import { cache } from "react";
 import { connectDB, toPlain } from "./db";
 import { Blog, FeaturedProperty, Project, Property } from "./models";
 import { escapeRegex } from "./format";
-import { slugify } from "./locations";
+import { slugify, areaPath } from "./locations";
 import type { BlogDoc, ProjectDoc, PropertyDoc } from "./types";
 
 export const PAGE_SIZE = 12;
@@ -158,14 +158,24 @@ export async function getSimilarProperties(p: PropertyDoc) {
 
 export async function getHomeData() {
   await connectDB();
-  const [featured, latest, blogs, projects, facets, totalLive] = await Promise.all([
+  const [featured, latest, blogs, projects, facets, totalLive, areasRaw] = await Promise.all([
     FeaturedProperty.find({ isActive: true }).populate("property").sort("displayOrder").limit(4).lean(),
     Property.find({ status: "available" }).sort("-createdAt").limit(8).lean(),
     Blog.find({ status: "published" }).sort("-publishedAt").limit(3).lean(),
     Project.find({ status: "published" }).sort({ featured: -1, order: 1, createdAt: -1 }).limit(3).lean(),
     getFacetCounts(),
     Property.countDocuments({ status: "available" }),
+    listAreasWithListings(),
   ]);
+  // Popular-area chips must point at real area pages, so they are derived from
+  // areas that actually have live listings (same source as the sitemap). Skip
+  // areas whose city equals the state (e.g. "Abuja" in Abuja → /abuja/abuja) and
+  // clean the label to the leading place name ("Ikoyi, Lagos" → "Ikoyi").
+  const popularAreas = areasRaw
+    .filter((a) => slugify(a.city) !== slugify(a.state))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 6)
+    .map((a) => ({ label: a.city.split(",")[0].trim(), href: areaPath(a.state, a.city)! }));
   type Featured = {
     _id: string;
     title: string;
@@ -181,6 +191,7 @@ export async function getHomeData() {
     projects: toPlain<ProjectDoc[]>(projects),
     facets,
     totalLive,
+    popularAreas,
   };
 }
 

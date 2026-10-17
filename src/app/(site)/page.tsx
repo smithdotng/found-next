@@ -7,7 +7,6 @@ import { PropertyGrid } from "@/components/property/property-card";
 import { SmartImage } from "@/components/ui/smart-image";
 import { getHomeData } from "@/lib/queries";
 import { pageMetadata } from "@/lib/seo";
-import { areaPath } from "@/lib/locations";
 import { formatDate, formatPrice, locationLine, PROPERTY_TYPES } from "@/lib/format";
 
 
@@ -16,7 +15,7 @@ export const metadata: Metadata = {
   ...pageMetadata({
     title: "Found Projects & Realty Limited - Find Your Dream Property in Nigeria",
     description:
-      "Browse thousands of verified properties across Nigeria. From luxury shortlets to commercial spaces, land, and buildings.",
+      "Browse verified homes, land, shortlets and commercial space across Nigeria — every listing reviewed before it goes live, with agency fees capped at 10%.",
     path: "/",
     absoluteTitle: true,
     keywords: "property, real estate, nigeria, lagos, abuja, rent, sale, shortlet, land, building",
@@ -33,7 +32,7 @@ const TYPE_ICONS = {
 } as const;
 
 export default async function HomePage() {
-  const { featured, latest, blogs, projects, facets, totalLive } = await getHomeData();
+  const { featured, latest, blogs, projects, facets, totalLive, popularAreas } = await getHomeData();
 
   return (
     <>
@@ -54,24 +53,19 @@ export default async function HomePage() {
           <div className="mt-9">
             <HeroSearch />
           </div>
-          <div className="mt-6 flex flex-wrap gap-2 text-xs">
-            {([
-              ["Lekki", "Lagos"],
-              ["Wuse 2", "Abuja"],
-              ["Maitama", "Abuja"],
-              ["Ikoyi", "Lagos"],
-              ["Port Harcourt", "Rivers"],
-              ["Gwarinpa", "Abuja"],
-            ] as const).map(([city, state]) => (
-              <Link
-                key={city}
-                href={areaPath(state, city)!}
-                className="rounded-full bg-white/10 px-3 py-1.5 font-medium text-white/90 ring-1 ring-white/15 backdrop-blur transition hover:bg-white/20"
-              >
-                {city}
-              </Link>
-            ))}
-          </div>
+          {popularAreas.length ? (
+            <div className="mt-6 flex flex-wrap gap-2 text-xs">
+              {popularAreas.map((a) => (
+                <Link
+                  key={a.href}
+                  href={a.href}
+                  className="rounded-full bg-white/10 px-3 py-1.5 font-medium text-white/90 ring-1 ring-white/15 backdrop-blur transition hover:bg-white/20"
+                >
+                  {a.label}
+                </Link>
+              ))}
+            </div>
+          ) : null}
         </div>
       </section>
 
