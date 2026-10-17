@@ -21,9 +21,9 @@ const base = pageMetadata({ title: DEFAULT_TITLE, path: "/", absoluteTitle: true
 export const metadata: Metadata = {
   ...base,
   metadataBase: new URL(siteUrl()),
-  title: { default: DEFAULT_TITLE, template: "%s | Found Properties" },
+  title: { default: DEFAULT_TITLE, template: "%s | Found" },
   description: DEFAULT_DESCRIPTION,
-  applicationName: "Found Properties",
+  applicationName: "Found",
   authors: [{ name: COMPANY }],
   creator: COMPANY,
   publisher: COMPANY,

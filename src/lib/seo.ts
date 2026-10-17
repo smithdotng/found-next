@@ -1,11 +1,11 @@
 import { MEDIA_BASE_URL, mediaUrl } from "./media";
 import type { Metadata } from "next";
 
-export const SITE_NAME = "Found Properties";
+export const SITE_NAME = "Found";
 export const COMPANY = "Found Projects & Realty Limited";
-export const DEFAULT_TITLE = "Found Projects & Realty Limited - Nigeria's Premier Property Platform";
+export const DEFAULT_TITLE = "Found — Verified Homes, Land & Shortlets in Nigeria";
 export const DEFAULT_DESCRIPTION =
-  "Find your dream property in Nigeria. Browse thousands of verified listings including shortlets, land, buildings, shops, and business complexes. Fair commissions capped at 10%.";
+  "Verified homes, land and shortlets in Abuja and across Nigeria, with agency fees capped at 10%.";
 export const DEFAULT_KEYWORDS =
   "property, real estate, nigeria, lagos, abuja, port harcourt, rent, sale, shortlet, land, building, shop, business complex, realtor, agent";
 export const DEFAULT_OG_IMAGE = "/assets/images/og-1200x630.jpg";
@@ -104,8 +104,8 @@ export function pageMetadata(seo: PageSeo): Metadata {
       title: seo.title,
       description,
       images: [image],
-      site: "@foundproperties",
-      creator: "@foundproperties",
+      site: "@founddotng",
+      creator: "@founddotng",
     },
   };
 }

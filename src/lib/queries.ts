@@ -117,14 +117,21 @@ export const getPublicProperty = cache(async (slug: string) => {
 
 export async function getSimilarProperties(p: PropertyDoc) {
   await connectDB();
-  const items = await Property.find({
-    _id: { $ne: p._id },
-    propertyType: p.propertyType,
-    status: "available",
-    "location.state": p.location?.state,
-  })
-    .limit(4)
-    .lean();
+  const LIMIT = 4;
+  const base = { _id: { $ne: p._id }, propertyType: p.propertyType, status: "available" as const };
+  // Prefer listings in the same city (same area reads better and strengthens internal linking),
+  // then top up from the same state so the row is never empty.
+  const sameCity = p.location?.city
+    ? await Property.find({ ...base, "location.city": p.location.city }).limit(LIMIT).lean()
+    : [];
+  let items = sameCity;
+  if (items.length < LIMIT && p.location?.state) {
+    const exclude = [p._id, ...sameCity.map((x: { _id: unknown }) => x._id)];
+    const topUp = await Property.find({ ...base, _id: { $nin: exclude }, "location.state": p.location.state })
+      .limit(LIMIT - items.length)
+      .lean();
+    items = [...items, ...topUp];
+  }
   return toPlain<PropertyDoc[]>(items);
 }
 

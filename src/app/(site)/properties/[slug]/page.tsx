@@ -26,8 +26,27 @@ import { sendPropertyInquiry } from "@/app/actions/public";
 
 const PUBLIC_STATUSES = ["available", "sold", "rented"];
 
+/** Address → city → state, with repeated place names removed (e.g. a listing whose
+ *  address already includes the city/state won't render "Mabushi, Abuja, Mabushi, Abuja (FCT)"). */
 function fullLocation(p: PropertyDoc) {
-  return p.location ? `${p.location.address ? p.location.address + ", " : ""}${p.location.city}, ${stateLabel(p.location.state)}` : "Nigeria";
+  if (!p.location) return "Nigeria";
+  const parts = [p.location.address, p.location.city, stateLabel(p.location.state)].filter(Boolean).map((s) => String(s).trim());
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const part of parts) {
+    const kept = part
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean)
+      .filter((t) => {
+        const core = t.replace(/\(.*?\)/g, "").trim().toLowerCase(); // "Abuja (FCT)" -> "abuja"
+        if (!core || seen.has(core)) return false;
+        seen.add(core);
+        return true;
+      });
+    if (kept.length) out.push(kept.join(", "));
+  }
+  return out.join(", ") || "Nigeria";
 }
 
 export async function generateMetadata({ params }: PageProps<"/properties/[slug]">): Promise<Metadata> {
@@ -38,24 +57,21 @@ export async function generateMetadata({ params }: PageProps<"/properties/[slug]
   // Same meta/OG copy the EJS property-detail view produced.
   const price = formatPrice(p.price);
   const loc = fullLocation(p);
-  const base = pageMetadata({
-    title: `${p.title} | Found Projects & Realty Limited`,
-    absoluteTitle: true,
-    description: `✨ ${typeLabel(p.propertyType)} for ${p.transactionType} in ${p.location?.city}, ${stateLabel(p.location?.state)}\n💰 Price: ${price}\n📍 Location: ${loc}`,
+  // Only append "located at <loc>" when the title doesn't already name the place, to avoid repetition.
+  const titleHasLoc = p.location?.city ? p.title.toLowerCase().includes(String(p.location.city).toLowerCase()) : false;
+  const descLead = titleHasLoc ? p.title : `${p.title} — ${loc}`;
+  return pageMetadata({
+    title: p.title,
+    description: `${descLead}. Price: ${price}. ${plainText(p.description, 160)}`.trim(),
     path: `/properties/${p.slug}`,
     image: p.images?.[0]?.url || null,
     imageAlt: p.title,
     type: "article",
-    keywords: `${p.title}, ${typeLabel(p.propertyType)} for ${p.transactionType}, ${p.location?.city} property, ${p.location?.state} real estate, Nigeria property, Found Properties`,
+    keywords: `${p.title}, ${typeLabel(p.propertyType)} for ${p.transactionType}, ${p.location?.city} property, ${stateLabel(p.location?.state)} real estate, Nigeria property, Found`,
     publishedTime: p.createdAt,
     modifiedTime: p.updatedAt,
     noIndex: !PUBLIC_STATUSES.includes(p.status),
   });
-  return {
-    ...base,
-    title: { absolute: `${p.title} - Found Projects & Realty Limited` },
-    description: `${p.title} located at ${loc}. Price: ${price}. ${plainText(p.description, 160)}`,
-  };
 }
 
 export default async function PropertyPage({ params }: PageProps<"/properties/[slug]">) {
@@ -96,17 +112,30 @@ export default async function PropertyPage({ params }: PageProps<"/properties/[s
     f.borehole && { icon: Droplets, label: "Borehole / water" },
   ].filter(Boolean) as { icon: typeof Sofa; label: string }[];
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "RealEstateListing",
-    name: p.title,
-    description: plainText(p.description, 300),
-    url,
-    image: (p.images ?? []).map((i) => absoluteUrl(i.url)),
-    datePosted: p.createdAt,
-    offers: { "@type": "Offer", price: p.price, priceCurrency: "NGN", availability: p.status === "available" ? "https://schema.org/InStock" : "https://schema.org/SoldOut" },
-    address: { "@type": "PostalAddress", streetAddress: p.location?.address, addressLocality: p.location?.city, addressRegion: p.location?.state, addressCountry: "NG" },
-  };
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "RealEstateListing",
+      name: p.title,
+      description: plainText(p.description, 300),
+      url,
+      image: (p.images ?? []).map((i) => absoluteUrl(i.url)),
+      datePosted: p.createdAt,
+      offers: { "@type": "Offer", price: p.price, priceCurrency: "NGN", availability: p.status === "available" ? "https://schema.org/InStock" : "https://schema.org/SoldOut" },
+      address: { "@type": "PostalAddress", streetAddress: p.location?.address, addressLocality: p.location?.city, addressRegion: stateLabel(p.location?.state), addressCountry: "NG" },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: absoluteUrl("/") },
+        { "@type": "ListItem", position: 2, name: "Properties", item: absoluteUrl("/properties") },
+        { "@type": "ListItem", position: 3, name: typeLabel(p.propertyType), item: absoluteUrl(`/properties?type=${p.propertyType}`) },
+        ...(p.location?.city ? [{ "@type": "ListItem", position: 4, name: p.location.city, item: absoluteUrl(`/properties?search=${encodeURIComponent(p.location.city)}`) }] : []),
+        { "@type": "ListItem", position: p.location?.city ? 5 : 4, name: p.title, item: url },
+      ],
+    },
+  ];
 
   return (
     <div className="container-page pb-28 pt-4 lg:pb-12 lg:pt-8">
