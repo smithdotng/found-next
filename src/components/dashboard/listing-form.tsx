@@ -7,7 +7,7 @@ import { AlertCircle, BedDouble, Camera, CheckCircle2, Info, Loader2, MapPin, Sp
 import { createListing, updateListing } from "@/app/actions/listings";
 import { PhotoManager, type PhotoItem } from "./photo-manager";
 import {
-  HOUSE_RULES, NIGERIAN_STATES, PROPERTY_TYPES, SHORTLET_AMENITIES, TRANSACTION_TYPES, formatPrice, stateLabel,
+  HOUSE_RULES, NIGERIAN_STATES, PROPERTY_AMENITIES, PROPERTY_TYPES, SHORTLET_AMENITIES, SUBTYPES, TRANSACTION_TYPES, formatPrice, stateLabel,
 } from "@/lib/format";
 import type { PropertyDoc } from "@/lib/types";
 
@@ -108,6 +108,18 @@ export function ListingForm({ listing, isAdmin, shortletOnly = false }: { listin
               </div>
               <Err e={err("propertyType")} />
             </div>
+            {type === "building" ? (
+              <div>
+                <Label htmlFor="subtype">Home type</Label>
+                <select id="subtype" name="subtype" className="field" defaultValue={listing?.subtype ?? ""}>
+                  <option value="">Select the home type…</option>
+                  {SUBTYPES.map((st) => (
+                    <option key={st.value} value={st.value}>{st.label}</option>
+                  ))}
+                </select>
+                <p className="field-hint">Helps buyers find it — e.g. “Duplex”, “Flat / Apartment”, “Terrace”.</p>
+              </div>
+            ) : null}
             <div className="grid gap-5 sm:grid-cols-2">
               <div className={clsx(shortletOnly && "hidden")}>
                 <Label>Offer type</Label>
@@ -201,15 +213,9 @@ export function ListingForm({ listing, isAdmin, shortletOnly = false }: { listin
           </div>
           {!isLand ? (
             <div className="mt-5 flex flex-wrap gap-2">
-              {[
-                ["furnished", "Furnished", f.furnished],
-                ["serviced", "Serviced", f.serviced],
-                ["security", "24/7 security", f.security],
-                ["powerSupply", "Steady power", f.powerSupply],
-                ["borehole", "Borehole / water", f.borehole],
-              ].map(([k, l, d]) => (
-                <label key={k as string} className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 px-3.5 py-1.5 text-sm text-slate-700 has-[:checked]:border-brand-600 has-[:checked]:bg-brand-50 has-[:checked]:text-brand-700">
-                  <input type="checkbox" name={k as string} defaultChecked={!!d} className="size-3.5 accent-brand-600" /> {l as string}
+              {PROPERTY_AMENITIES.map((a) => (
+                <label key={a.key} className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 px-3.5 py-1.5 text-sm text-slate-700 has-[:checked]:border-brand-600 has-[:checked]:bg-brand-50 has-[:checked]:text-brand-700">
+                  <input type="checkbox" name={a.key} defaultChecked={!!(f as Record<string, unknown>)[a.key]} className="size-3.5 accent-brand-600" /> {a.label}
                 </label>
               ))}
             </div>

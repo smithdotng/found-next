@@ -3,10 +3,45 @@ import type { PropertyDoc, PropertyStatus, PropertyType, TransactionType } from 
 export const PROPERTY_TYPES: { value: PropertyType; label: string; plural: string }[] = [
   { value: "shortlet", label: "Shortlet", plural: "Shortlets" },
   { value: "land", label: "Land", plural: "Land" },
-  { value: "building", label: "Building", plural: "Buildings" },
+  { value: "building", label: "Home", plural: "Homes" },
   { value: "shop", label: "Shop", plural: "Shops" },
   { value: "business_complex", label: "Business Complex", plural: "Business Complexes" },
 ];
+
+/** Home sub-types for buildings (what people actually search for). */
+export const SUBTYPES = [
+  { value: "duplex", label: "Duplex" },
+  { value: "detached", label: "Detached duplex" },
+  { value: "semi_detached", label: "Semi-detached duplex" },
+  { value: "terrace", label: "Terrace" },
+  { value: "bungalow", label: "Bungalow" },
+  { value: "house", label: "House" },
+  { value: "flat", label: "Flat / Apartment" },
+  { value: "mini_flat", label: "Mini flat" },
+  { value: "self_contain", label: "Self-contain" },
+  { value: "penthouse", label: "Penthouse" },
+  { value: "maisonette", label: "Maisonette" },
+] as const;
+
+export const subtypeLabel = (v?: string) => SUBTYPES.find((s) => s.value === v)?.label ?? "";
+
+/** The shared building amenities shown on the listing form and the property page. */
+export const PROPERTY_AMENITIES = [
+  { key: "furnished", label: "Furnished" },
+  { key: "serviced", label: "Serviced" },
+  { key: "security", label: "24/7 security" },
+  { key: "gatedEstate", label: "Gated estate" },
+  { key: "powerSupply", label: "Steady power supply" },
+  { key: "solar", label: "Solar / inverter" },
+  { key: "borehole", label: "Borehole / water" },
+  { key: "fibreInternet", label: "Fibre internet (FTTH)" },
+  { key: "cctv", label: "CCTV" },
+  { key: "smartAccess", label: "Smart / biometric access" },
+  { key: "airConditioning", label: "Air conditioning" },
+  { key: "swimmingPool", label: "Swimming pool" },
+  { key: "gym", label: "Gym" },
+  { key: "elevator", label: "Elevator" },
+] as const;
 
 export const TRANSACTION_TYPES: { value: TransactionType; label: string }[] = [
   { value: "sale", label: "For Sale" },
@@ -46,6 +81,12 @@ export function stateLabel(s?: string) {
 
 export function typeLabel(t?: string) {
   return PROPERTY_TYPES.find((p) => p.value === t)?.label ?? (t ?? "").replace(/_/g, " ");
+}
+
+/** What to call a listing in copy: the specific home sub-type when set, else the broad type. */
+export function typeDisplay(p?: { propertyType?: string; subtype?: string }) {
+  if (p?.propertyType === "building" && p.subtype) return subtypeLabel(p.subtype) || typeLabel(p.propertyType);
+  return typeLabel(p?.propertyType);
 }
 
 export function txLabel(t?: string) {

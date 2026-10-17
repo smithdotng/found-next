@@ -4,6 +4,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { after } from "next/server";
 import {
   BadgeCheck, Bath, BedDouble, Car, Check, ChevronRight, Clock, Eye, MapPin, Ruler, ShieldCheck, Sofa, Toilet, Users, Zap, Droplets, Sparkles, Phone, Pencil,
+  Wifi, Cctv, Fingerprint, AirVent, Waves, Dumbbell, ArrowUpDown, Fence, Sun,
 } from "lucide-react";
 import { getPublicProperty, getSimilarProperties } from "@/lib/queries";
 import { isPropertyVerified, isRealtorVerified } from "@/lib/verification";
@@ -13,7 +14,7 @@ import { Property } from "@/lib/models";
 import { getSession } from "@/lib/session";
 import { absoluteUrl, pageMetadata } from "@/lib/seo";
 import {
-  STATUS_META, formatDate, formatPrice, locationLine, plainText, priceSuffix, stateLabel, txLabel, typeLabel,
+  PROPERTY_AMENITIES, STATUS_META, formatDate, formatPrice, locationLine, plainText, priceSuffix, stateLabel, subtypeLabel, txLabel, typeDisplay, typeLabel,
 } from "@/lib/format";
 import type { OwnerLite, PropertyDoc } from "@/lib/types";
 import { Gallery } from "@/components/property/gallery";
@@ -67,7 +68,7 @@ export async function generateMetadata({ params }: PageProps<"/properties/[slug]
     image: p.images?.[0]?.url || null,
     imageAlt: p.title,
     type: "article",
-    keywords: `${p.title}, ${typeLabel(p.propertyType)} for ${p.transactionType}, ${p.location?.city} property, ${stateLabel(p.location?.state)} real estate, Nigeria property, Found`,
+    keywords: `${p.title}, ${typeDisplay(p)} for ${p.transactionType}, ${p.location?.city} property, ${stateLabel(p.location?.state)} real estate, Nigeria property, Found`,
     publishedTime: p.createdAt,
     modifiedTime: p.updatedAt,
     noIndex: !PUBLIC_STATUSES.includes(p.status),
@@ -104,13 +105,15 @@ export default async function PropertyPage({ params }: PageProps<"/properties/[s
     f.landArea ? { icon: Ruler, label: "Land area", value: `${f.landArea.toLocaleString()} sqm` } : null,
     (p.propertyType as string) === "shortlet" && sl?.maxGuests ? { icon: Users, label: "Guests", value: sl.maxGuests } : null,
   ].filter(Boolean) as { icon: typeof Bath; label: string; value: string | number }[];
-  const amenities = [
-    f.furnished && { icon: Sofa, label: "Furnished" },
-    f.serviced && { icon: Sparkles, label: "Serviced" },
-    f.security && { icon: ShieldCheck, label: "24/7 security" },
-    f.powerSupply && { icon: Zap, label: "Steady power supply" },
-    f.borehole && { icon: Droplets, label: "Borehole / water" },
-  ].filter(Boolean) as { icon: typeof Sofa; label: string }[];
+  const AMENITY_ICONS: Record<string, typeof Sofa> = {
+    furnished: Sofa, serviced: Sparkles, security: ShieldCheck, gatedEstate: Fence, powerSupply: Zap, solar: Sun,
+    borehole: Droplets, fibreInternet: Wifi, cctv: Cctv, smartAccess: Fingerprint, airConditioning: AirVent,
+    swimmingPool: Waves, gym: Dumbbell, elevator: ArrowUpDown,
+  };
+  const amenities = PROPERTY_AMENITIES.filter((a) => (f as Record<string, unknown>)[a.key]).map((a) => ({
+    icon: AMENITY_ICONS[a.key] ?? Check,
+    label: a.label,
+  }));
 
   const jsonLd = [
     {
@@ -165,6 +168,7 @@ export default async function PropertyPage({ params }: PageProps<"/properties/[s
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <span className="chip bg-brand-50 text-brand-700 ring-brand-600/15">{typeLabel(p.propertyType)}</span>
+            {p.subtype ? <span className="chip bg-brand-50 text-brand-700 ring-brand-600/15">{subtypeLabel(p.subtype)}</span> : null}
             <span className="chip bg-slate-50 text-slate-700 ring-slate-500/15">{txLabel(p.transactionType)}</span>
             {p.priceNegotiable ? <span className="chip bg-emerald-50 text-emerald-700 ring-emerald-600/15">Negotiable</span> : null}
             {isPropertyVerified(p) ? (

@@ -21,6 +21,9 @@ const propertySchema = new mongoose.Schema({
         enum: ['shortlet', 'land', 'building', 'shop', 'business_complex'],
         required: true
     },
+    // For buildings: the specific home type (house, duplex, flat/apartment, etc.).
+    // Added by the Next.js app for better categorisation and search copy.
+    subtype: { type: String },
     transactionType: {
         type: String,
         enum: ['rent', 'sale', 'lease'],
@@ -56,7 +59,16 @@ const propertySchema = new mongoose.Schema({
         serviced: Boolean,
         security: Boolean,
         powerSupply: Boolean,
-        borehole: Boolean
+        borehole: Boolean,
+        fibreInternet: Boolean,
+        cctv: Boolean,
+        smartAccess: Boolean,
+        airConditioning: Boolean,
+        swimmingPool: Boolean,
+        gym: Boolean,
+        elevator: Boolean,
+        gatedEstate: Boolean,
+        solar: Boolean
     },
     images: [{
         url: String,

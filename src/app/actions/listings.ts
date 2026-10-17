@@ -10,6 +10,7 @@ import { Property, User, Inquiry, Promotion, FeaturedProperty } from "@/lib/mode
 import { requireUser, type AuthedSession } from "@/lib/session";
 import { filesFrom, removeUpload, saveImages, UploadError } from "@/lib/uploads";
 import emailService from "@/lib/email";
+import { PROPERTY_AMENITIES } from "@/lib/format";
 import type { FormState } from "./public";
 import type { PropertyStatus } from "@/lib/types";
 
@@ -50,6 +51,7 @@ function readListing(fd: FormData) {
     title,
     description,
     propertyType,
+    subtype: propertyType === "building" ? s(fd, "subtype") || undefined : undefined,
     transactionType,
     price,
     priceNegotiable: on(fd, "priceNegotiable"),
@@ -68,11 +70,7 @@ function readListing(fd: FormData) {
       parkingSpaces: n(fd, "parkingSpaces"),
       floorArea: n(fd, "floorArea"),
       landArea: n(fd, "landArea"),
-      furnished: on(fd, "furnished"),
-      serviced: on(fd, "serviced"),
-      security: on(fd, "security"),
-      powerSupply: on(fd, "powerSupply"),
-      borehole: on(fd, "borehole"),
+      ...Object.fromEntries(PROPERTY_AMENITIES.map((a) => [a.key, on(fd, a.key)])),
     },
     agencyFee: price * 0.1,
   };

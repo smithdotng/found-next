@@ -44,6 +44,8 @@ export interface PropertyDoc {
   slug: string;
   description: string;
   propertyType: PropertyType;
+  /** For buildings: house, duplex, flat/apartment, etc. See SUBTYPES in format.ts. */
+  subtype?: string;
   transactionType: TransactionType;
   price: number;
   priceNegotiable?: boolean;
@@ -66,6 +68,15 @@ export interface PropertyDoc {
     security?: boolean;
     powerSupply?: boolean;
     borehole?: boolean;
+    fibreInternet?: boolean;
+    cctv?: boolean;
+    smartAccess?: boolean;
+    airConditioning?: boolean;
+    swimmingPool?: boolean;
+    gym?: boolean;
+    elevator?: boolean;
+    gatedEstate?: boolean;
+    solar?: boolean;
   };
   images: PropertyImage[];
   videoUrl?: string;

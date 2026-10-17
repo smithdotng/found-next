@@ -10,6 +10,7 @@ export const PAGE_SIZE = 12;
 
 export interface PropertyFilters {
   type?: string;
+  subtype?: string;
   transactionType?: string;
   state?: string;
   city?: string;
@@ -28,7 +29,7 @@ function one(v: string | string[] | undefined) {
 
 export function parseFilters(sp: Record<string, string | string[] | undefined>): PropertyFilters {
   const keys: (keyof PropertyFilters)[] = [
-    "type", "transactionType", "state", "city", "minPrice", "maxPrice", "bedrooms", "search", "sort", "tier", "page",
+    "type", "subtype", "transactionType", "state", "city", "minPrice", "maxPrice", "bedrooms", "search", "sort", "tier", "page",
   ];
   const out: PropertyFilters = {};
   for (const k of keys) {
@@ -43,6 +44,7 @@ export async function searchProperties(f: PropertyFilters) {
   await connectDB();
   const query: Record<string, unknown> = { status: "available" };
   if (f.type) query.propertyType = f.type;
+  if (f.subtype) query.subtype = f.subtype;
   if (f.transactionType) query.transactionType = f.transactionType;
   if (f.state) query["location.state"] = f.state;
   if (f.city) query["location.city"] = new RegExp(`^${escapeRegex(f.city)}$`, "i");
