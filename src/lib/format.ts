@@ -147,8 +147,23 @@ export function timeAgo(d?: string | Date) {
   return formatDate(d);
 }
 
+const HTML_ENTITIES: Record<string, string> = {
+  "&nbsp;": " ", "&mdash;": "—", "&ndash;": "–", "&rsquo;": "’", "&lsquo;": "‘",
+  "&rdquo;": "”", "&ldquo;": "“", "&hellip;": "…", "&quot;": '"', "&apos;": "'",
+  "&lt;": "<", "&gt;": ">", "&amp;": "&",
+};
+
+/** Turn a stored description (which may carry pasted rich-text markup) into clean plain text:
+ *  decode HTML entities first — so entity-encoded tags like `&lt;h3&gt;` become real tags —
+ *  then strip all tags. Leaving entities undecoded made them show literally (e.g. "Abuja&rsquo;s"). */
 export function plainText(html = "", max = 160) {
-  const t = html.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
+  const t = html
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
+    .replace(/&(?:nbsp|mdash|ndash|rsquo|lsquo|rdquo|ldquo|hellip|quot|apos|lt|gt|amp);/g, (m) => HTML_ENTITIES[m] ?? m)
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
   return t.length > max ? t.slice(0, max - 1).trimEnd() + "…" : t;
 }
 
