@@ -19,6 +19,11 @@ export default function AgentRegisterPage() {
         Get tracked links and QR codes for verified listings. Listing your own properties?{" "}
         <Link href="/register" className="font-medium text-brand-600 hover:underline">Register as a realtor</Link>.
       </p>
+      <p className="mt-2 text-sm text-slate-500">
+        Once verified, you&apos;ll sign the{" "}
+        <Link href="/agent/agreement" className="font-medium text-brand-600 hover:underline">Agent Agreement</Link>{" "}
+        to activate your account.
+      </p>
       <div className="mt-8">
         <RegisterForm kind="agent" />
       </div>

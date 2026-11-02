@@ -1,13 +1,17 @@
 "use server";
 
 import { randomBytes } from "crypto";
+import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { connectDB } from "@/lib/db";
 import { Promotion, Property, User, Withdrawal } from "@/lib/models";
 import { requireUser } from "@/lib/session";
 import { siteUrl } from "@/lib/seo";
+import { AGENT_AGREEMENT_VERSION } from "@/lib/agreement";
+import { adminEmail, sendMail } from "@/lib/mailer";
 
 type Result = { ok: boolean; message: string; link?: string };
+type AgreeResult = { ok: boolean; message: string; errors?: Record<string, string> };
 
 /** Creates (or returns) the agent's tracked link for a property — same code format as the Express app. */
 export async function createPromotion(propertyId: string): Promise<Result> {
@@ -15,6 +19,8 @@ export async function createPromotion(propertyId: string): Promise<Result> {
   await connectDB();
   const agent = await User.findById(session.userId).select("agentProfile isSuspended");
   if (!agent?.agentProfile?.isApproved || agent.isSuspended) return { ok: false, message: "Your agent account isn't active yet." };
+  if (agent.agentProfile?.agreement?.status !== "accepted")
+    return { ok: false, message: "Review and sign your Agent Agreement to activate your account before creating referral links." };
 
   const existing = await Promotion.findOne({ agent: session.userId, property: propertyId });
   if (existing) return { ok: true, message: "You're already promoting this property", link: existing.referralLink };
@@ -86,4 +92,40 @@ export async function requestWithdrawal(_prev: unknown, fd: FormData): Promise<R
   });
   revalidatePath("/dashboard/earnings");
   return { ok: true, message: "Withdrawal requested — we'll process it within 2 business days." };
+}
+
+/** Agent signs the referral agreement — the final step of agent verification that activates the account. */
+export async function acceptAgentAgreement(_prev: unknown, fd: FormData): Promise<AgreeResult> {
+  const session = await requireUser(["agent"]);
+  await connectDB();
+  const user = await User.findById(session.userId);
+  if (!user) return { ok: false, message: "Account not found." };
+  if (!user.agentProfile?.isApproved)
+    return { ok: false, message: "Your agent account needs to be verified by Found before you can sign." };
+
+  const signedName = String(fd.get("signedName") ?? "").trim();
+  if (signedName.toLowerCase().replace(/\s+/g, " ") !== user.name.toLowerCase().replace(/\s+/g, " "))
+    return { ok: false, message: `Type your full name exactly as on your account (${user.name}) to sign.`, errors: { signedName: "Name doesn't match" } };
+  if (!fd.get("agree")) return { ok: false, message: "Tick the box to confirm you agree.", errors: { agree: "Required" } };
+
+  const h = await headers();
+  user.agentProfile.agreement = {
+    status: "accepted",
+    version: AGENT_AGREEMENT_VERSION,
+    sentAt: user.agentProfile.agreement?.sentAt,
+    acceptedAt: new Date(),
+    signedName,
+    signedIp: (h.get("x-forwarded-for") ?? "").split(",")[0].trim() || h.get("x-real-ip") || "",
+    signedUserAgent: (h.get("user-agent") ?? "").slice(0, 300),
+  };
+  await user.save();
+
+  void sendMail(
+    adminEmail(),
+    `Agent agreement signed: ${user.name}`,
+    `<p>${user.name} (${user.email}) signed the Found agent referral agreement (version ${AGENT_AGREEMENT_VERSION}). Their agent account is now active.</p>`,
+    "Found",
+  ).catch(() => {});
+  revalidatePath("/dashboard", "layout");
+  return { ok: true, message: "Agreement signed — your agent account is now active. You can start creating referral links." };
 }

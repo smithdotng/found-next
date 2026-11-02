@@ -273,6 +273,16 @@ async function AgentHome({ name, userId }: { name: string; userId: string }) {
         description="Track your referral links and earnings."
         actions={<Link href="/dashboard/promote" className="btn-accent"><Megaphone className="size-4" /> Promote a property</Link>}
       />
+      {d.user?.agentProfile?.agreement?.status !== "accepted" ? (
+        <div className="mb-6 flex flex-col gap-3 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-900 ring-1 ring-inset ring-amber-600/20 sm:flex-row sm:items-center sm:justify-between">
+          <span>
+            {d.user?.agentProfile?.isApproved
+              ? "You're verified. Sign your Agent Agreement to activate your account and start creating referral links."
+              : "Your agent account is under review. You'll sign the Agent Agreement to activate it once you're verified."}
+          </span>
+          <Link href="/agent/agreement" className="btn-primary shrink-0 whitespace-nowrap">Review &amp; sign agreement</Link>
+        </div>
+      ) : null}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="Active promotions" value={d.totals.count} icon={Megaphone} href="/dashboard/promotions" />
         <StatCard label="Link clicks" value={d.totals.clicks.toLocaleString()} icon={MousePointerClick} tone="emerald" />

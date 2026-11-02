@@ -55,6 +55,7 @@ export function SiteFooter() {
           <FooterLink href="/fractional/developers">Fractional for developers</FooterLink>
           <FooterLink href="/get-verified">Get verified</FooterLink>
           <FooterLink href="/agent/register">Become an agent</FooterLink>
+          <FooterLink href="/agent/agreement">Agent agreement</FooterLink>
           <FooterLink href="/how-it-works">How it works</FooterLink>
           <FooterLink href="/login">Sign in</FooterLink>
         </FooterCol>

@@ -139,7 +139,7 @@ export async function getAgentOverview(userId: string) {
   const list = toPlain<Promo[]>(promos);
   const sum = (k: "clicks" | "inquiries" | "transactions" | "earnings") => list.reduce((a, p) => a + (p[k] || 0), 0);
   return {
-    user: toPlain<{ name: string; agentProfile?: { totalEarnings?: number; pendingWithdrawal?: number; bankDetails?: { bankName?: string; accountNumber?: string; accountName?: string } } }>(user),
+    user: toPlain<{ name: string; agentProfile?: { isApproved?: boolean; totalEarnings?: number; pendingWithdrawal?: number; bankDetails?: { bankName?: string; accountNumber?: string; accountName?: string }; agreement?: { status?: string; version?: string; acceptedAt?: string; signedName?: string; signedIp?: string } } }>(user),
     promotions: list,
     totals: { clicks: sum("clicks"), inquiries: sum("inquiries"), transactions: sum("transactions"), earnings: sum("earnings"), count: list.length },
   };

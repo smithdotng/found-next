@@ -157,6 +157,16 @@ const userSchema = new mongoose.Schema({
             bankName: String,
             accountNumber: String,
             accountName: String
+        },
+        // Agent referral agreement — signing it is part of agent verification
+        agreement: {
+            status: { type: String, enum: ['none', 'sent', 'accepted'], default: 'none' },
+            version: String,
+            sentAt: Date,
+            acceptedAt: Date,
+            signedName: String,
+            signedIp: String,
+            signedUserAgent: String
         }
     },
     // Referral statistics

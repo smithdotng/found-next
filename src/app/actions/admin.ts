@@ -7,6 +7,7 @@ import { requireUser, isSuperAdmin } from "@/lib/session";
 import emailService from "@/lib/email";
 import { oneYearFrom } from "@/lib/verification";
 import { applyRealtorBadge } from "@/lib/verification-server";
+import { AGENT_AGREEMENT_VERSION } from "@/lib/agreement";
 
 type Result = { ok: boolean; message: string };
 
@@ -42,6 +43,15 @@ export async function setAgentApproved(id: string, approved: boolean): Promise<R
   if (!agent) return { ok: false, message: "Agent not found" };
   agent.agentProfile.isApproved = approved;
   if (approved && !agent.agentProfile.uniqueLink) agent.generateUniqueLink();
+  // Verifying an agent sends them the referral agreement to sign; signing activates the account.
+  if (approved && agent.agentProfile.agreement?.status !== "accepted") {
+    agent.agentProfile.agreement = {
+      ...(agent.agentProfile.agreement?.toObject?.() ?? agent.agentProfile.agreement ?? {}),
+      status: "sent",
+      sentAt: new Date(),
+      version: AGENT_AGREEMENT_VERSION,
+    };
+  }
   await agent.save();
   if (approved) emailService.sendAgentApprovalEmail(agent).catch((e: unknown) => console.error(e));
   revalidatePath("/dashboard/users");
