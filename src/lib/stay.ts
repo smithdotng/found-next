@@ -6,7 +6,7 @@
 import type { ShortletDetails } from "./types";
 
 export const DAY_MS = 24 * 60 * 60 * 1000;
-export const DEFAULT_COMMISSION = 25;
+export const DEFAULT_COMMISSION = 20;
 /**
  * VAT charged to guests on the accommodation total (nightly charges after discounts + cleaning fee).
  * Nigeria's standard rate is 7.5%. Override with NEXT_PUBLIC_VAT_RATE (set 0 to switch VAT off).
