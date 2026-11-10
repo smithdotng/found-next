@@ -4,7 +4,10 @@ import { connectDB } from "@/lib/db";
 import { Inquiry, Project, ProjectInquiry, Promotion, Property, User } from "@/lib/models";
 import { getSession } from "@/lib/session";
 import { EMAIL_RE, NG_PHONE } from "@/lib/format";
+import { verifyRecaptcha } from "@/lib/recaptcha";
 import emailService from "@/lib/email";
+
+const RECAPTCHA_FAIL = "We couldn't verify that you're human. Please reload the page and try again.";
 
 export type FormState = { ok: boolean; message: string; errors?: Record<string, string> } | null;
 
@@ -20,6 +23,7 @@ export async function sendPropertyInquiry(_prev: FormState, fd: FormData): Promi
   const phone = field(fd, "phone");
   const message = field(fd, "message");
   if (field(fd, "website")) return { ok: true, message: "Thanks! Your inquiry has been sent." }; // honeypot
+  if (!(await verifyRecaptcha(field(fd, "recaptchaToken"))).ok) return { ok: false, message: RECAPTCHA_FAIL };
 
   const errors: Record<string, string> = {};
   if (!name) errors.name = "Please enter your name";
@@ -84,6 +88,7 @@ export async function sendProjectInquiry(_prev: FormState, fd: FormData): Promis
   const phone = field(fd, "phone");
   const message = field(fd, "message");
   if (field(fd, "website")) return { ok: true, message: "Thanks! Your inquiry has been sent." };
+  if (!(await verifyRecaptcha(field(fd, "recaptchaToken"))).ok) return { ok: false, message: RECAPTCHA_FAIL };
 
   const errors: Record<string, string> = {};
   if (!name) errors.name = "Please enter your name";
@@ -111,6 +116,7 @@ export async function sendContactMessage(_prev: FormState, fd: FormData): Promis
   const subject = field(fd, "subject") || "General Inquiry";
   const message = field(fd, "message");
   if (field(fd, "website")) return { ok: true, message: "Thanks!" };
+  if (!(await verifyRecaptcha(field(fd, "recaptchaToken"))).ok) return { ok: false, message: RECAPTCHA_FAIL };
   const errors: Record<string, string> = {};
   if (!name) errors.name = "Please enter your name";
   if (!email || !EMAIL_RE.test(email)) errors.email = "Please enter a valid email address";
